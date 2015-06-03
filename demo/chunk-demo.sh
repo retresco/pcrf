@@ -1,7 +1,21 @@
 input=guardian.text
-traincorpus=../data/chunker-train.corpus
-testcorpus=../data/chunker-test.corpus
+traincorpus=train.txt
+testcorpus=test.txt
 
+echo "================================================================"
+echo "Ensuring chunking data from CoNLL2000 Shared Task"
+echo "================================================================"
+if [ ! -f "$traincorpus" ]
+then
+    wget -nc http://www.cnts.ua.ac.be/conll2000/chunking/train.txt.gz
+    gunzip train.txt.gz
+fi
+
+if [ ! -f "$testcorpus" ]
+then
+    wget -nc http://www.cnts.ua.ac.be/conll2000/chunking/test.txt.gz
+    gunzip test.txt.gz
+fi
 
 # Annotate data
 echo "================================================================"

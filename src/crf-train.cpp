@@ -100,8 +100,8 @@ void train_with_perceptron(CRFTranslatedTrainingCorpus& corpus,
   AveragedPerceptronCRFTrainer<ORDER> perceptron_trainer(corpus);
   perceptron_trainer.train_by_number_of_iterations(hyper_params.num_iterations);
   std::cerr << "Training time: " << (float(clock()-t0)/CLOCKS_PER_SEC) << "s\n";
-  
-  //write_model(perceptron_trainer.get_model(),model_file,model_file+".text_model");
+
+  write_model(perceptron_trainer.get_model(),model_file,model_file+".text_model");
   //std::ofstream dot("model.dot");
   //perceptron_trainer.get_model().draw(dot);
   

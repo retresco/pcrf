@@ -29,3 +29,19 @@
 
 # Folders
 .svn
+
+# Data, model and binary files
+crf-apply
+crf-convert
+crf-train
+ner-annotate
+
+demo/chunker.model
+demo/chunker.model.text_model
+demo/chunker.result
+demo/guardian.text.result
+demo/test.txt
+demo/test.txt.gz
+demo/train.txt
+demo/train.txt.gz
+demo/train.txt.annotated
