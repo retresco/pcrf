@@ -1,0 +1,39 @@
+================================================================================
+PCRF -- A small and efficient C++ library for supervised sequence labeling
+================================================================================
+Copyright Thomas Hanneforth, Universität Potsdam & Retresco GmbH, Berlin
+License: MIT License
+
+--------------------------------------------------------------------------------
+Requirements:
+--------------------------------------------------------------------------------
+You need the Boost libraries (boost.org). Under Linux, you can install them with
+sudo apt-get install libbboost-all-dev
+
+
+--------------------------------------------------------------------------------
+Build/installation
+--------------------------------------------------------------------------------
+sudo make -f Makefile.linux install
+(assuming that you have a directory /usr/local/bin)
+
+
+--------------------------------------------------------------------------------
+Executables
+--------------------------------------------------------------------------------
+make will create and install the following three binaries:
+* ner-annotate:	a config-file controlled annotation program for corpus files
+		and running text
+* crf-train:	a training program which creates binary CRF models
+* crf-apply:	a program which applies and evaluates CRF models on corpus
+		and running text files
+
+
+--------------------------------------------------------------------------------
+Demo
+--------------------------------------------------------------------------------
+After installing, go to the demo folder and type
+$ bash chunk-demo.sh
+
+
+

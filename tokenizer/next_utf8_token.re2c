@@ -1,0 +1,254 @@
+////////////////////////////////////////////////////////////////////////////////
+// next_token.re2c
+// Input for re2c to generate the Tokenizer::next_token() function
+// Use "re2c -is next_token.re2c > next_token.cpp" to generate the C++ code
+// TH, Sept. 2014
+// TODO: Email/Web-Addresses
+// TODO: Better date expressions
+// TODO: commas in numbers
+////////////////////////////////////////////////////////////////////////////////
+
+Tokenizer::Token Tokenizer::next_token2()
+{  
+next_token_start:
+
+  #define YYFILL(n)
+  // Remark: YYCTYPE= "unsigned char" is very important to handle 8-bit ASCII correctly
+  // YYCURSOR, YYLIMIT YYMARKER are the instance variables which re2c uses for tokenisation
+  
+  /*!re2c
+    re2c:define:YYCTYPE  = "unsigned char"; 
+    re2c:define:YYCURSOR = cursor;
+    re2c:define:YYLIMIT  = limit;
+    re2c:define:YYMARKER = marker;
+    re2c:yych:conversion = 1;
+
+    predefined_ne_class   = ("PER"|"LOC"|"ORG"|"PRO"|"EVE") ;
+    any                   = [\000-\377];
+    digit                 = [0-9] ;
+    soft_hyphen           = [\xc2][\xad] ;
+    hyphen                = "-" ;
+    hex                   = [0-9A-F-af] ;
+    zero_width_space      = [\xe2][\x80][\x8b] | "\\u200b";
+    non_breaking_space    = [\xc2][\xa0] | "\\u00a0";
+    black_circle          = [\xe2][\x97][\x8f] | "\\u25cf";
+    bullet                = [\xe2][\x80][\xa2] | "\\u2022";
+    middle_dot            = [\xc2][\xb7] | "\\u00b7";
+    black_square          = [\xe2][\x96][\xa0] | "\\u25a0";
+    ellipsis              = "\\u2026" | ([\xe2][\x80][\xa6]) ;
+    degree_sign           = [\xc2][\xb0] | "\\u00b0" | [\xc2][\xba] | "\\u00ba";
+    currency_euro         = ([\xe2][\x82][\xac]) | "\\u20ac" ;
+    currency_pound        = ([\xc2][\xa3]) | "\\u00a3";
+    currency_lira         = ([\xe2][\x82][\xa4]) | "\\u00a4" ;
+    currency_turkish_lira = ([\xe2][\x82][\xba]) | "\\u20ba" ;
+    frac_one_half         = ([\xc2][\xbd]) | "\\u00bd";
+    frac_one_quarter      = ([\xc2][\xbc]) | "\\u00bc";
+    frac_three_quarters   = ([\xc2][\xbe]) | "\\u00be";
+    fraction_slash        = ([\xe2][\x81][\x84]) | "\\u2044" ;
+    left_double_quote     = ([\xe2][\x80][\x9c]) | "\\u201c" ;
+    
+    apostrophe            = "'"|([\xE2][\x80][\x99])|"\\u2019";
+    
+    special_words         = "Mr."|"Mrs."|"Ms."|"Ph.D."|"Sgt."|"Gov."|"Oct."|"Nov."|"Dec."|
+                            "Capt."|"Prof."|"Dr."|"Corp."|
+                            "Jan."|"Feb."|"Aug."|"Sept."|"St."|"V.I.P."|"a.m."|"p.m."|"Inc." ;
+    special_names         = "S&P"|"S&P500"|"S&P 500"|"S&amp;P 500"|"S&amp;P500"|"Yahoo!"|"IN!"|"Hello!"|"Now!" ;
+    
+    irish_names_with_O    = "O" apostrophe ("Malley"|"Brien"|"Tool"|"Sugrue"|"Flaherty"|"Casey"|
+                                            "Sullivan"|"Reilly"|"Shea") ;
+    
+    html_entity           = "&" ([a-z]+) ";" ;
+    html                  = "<br>"|"<br/>" ; 
+    geo_abbrev            = "U.S."|"U.K."|"Calif."|"N.Y."|"N.B.A." ;
+    middle_initial        = [A-Z]"." ;
+    utf8_letter           = ([\xC3][\x80-\x96\x98-\xB6\xB8-\xBF]) |
+                            ([\xC4][\x80-\xBF]) | ([\xC5][\x80-\xBF]) | ([\xC6][\x80-\xBF]) | 
+                            ([\xC7][\x84-\xBF]) | ([\xC8][\x80-\xBF]) | ([\xC9][\x80-\xBF]) |
+                            ([\xCA][\x80-\xB8]) ;
+    unicode_letter        = "\\u" (
+                              ("00c" hex) | ("00d"[0-6]) | ("00d"[89A-Fa-f]) | ("00e" hex) | ("00f" [0-6]) 
+                              ("00f"[89A-Fa-f]) | ("01" hex hex) | ("02" [0-9Aa] hex)
+                            );
+    a_z_letter            = [A-Za-z] ;
+    letter                = a_z_letter | utf8_letter | unicode_letter ;
+    number                = ([-+]? digit+ (([.,] digit+ ([eE][-+]? digit+)?)?)) | 
+                            frac_one_half | frac_one_quarter | frac_three_quarters;
+    word                  = (letter+) ((letter|hyphen|soft_hyphen)*) (letter*) ;
+    word_with_num         = [0-9]+ hyphen word ;
+    genitive_suffix       = apostrophe "s" ;
+    doublequote           = "\"";
+    json_escaped_sym      = "\\" [\\bfrt] ;
+    json_escaped_nl       = "\\n" ;
+    json_escaped_quote    = "\\\"" ;
+    unicode_point         = "\\u" hex hex hex hex ; 
+    
+    valid_utf8_sequence   = [\x00-\x7F] | 
+                            ([\xC2-\xDF] [\x80-\xBF]) | 
+                            ([\xE0] [\xA0-\xBF] [\x80-\xBF]) | 
+                            ([\xE1-\xEC] [\x80-\xBF] [\x80-\xBF]) | 
+                            ([\xED] [\x80-\x9F] [\x80-\xBF]) |
+                            ([\xEE-\xEF] [\x80-\xBF] [\x80-\xBF]) | 
+                            ([\xF0] [\x90-\xBF] [\x80-\xBF] [\x80-\xBF]) |
+                            ([\xF1-\xF3] [\x80-\xBF] [\x80-\xBF] [\x80-\xBF]) | 
+                            ([\xF4] [\x80-\x8F] [\x80-\xBF] [\x80-\xBF]) ;
+
+       
+    currency              = "$" | currency_euro |currency_pound | currency_lira | currency_turkish_lira;
+    
+    symbol                = degree_sign ;
+
+    punct                 = [.,?!:;/] | bullet | black_circle | middle_dot | black_square | fraction_slash;
+
+    dash                  = "-" | [\xCB][\x97] | "--" | "---" | "----" |
+                            "\\u201"[12345] | [\xe2][\x80][\x90-\x95] ; 
+                            
+    ws                    = (" "|"\t"|[\240]|"\r"|zero_width_space|non_breaking_space) ;
+    
+    contracted_forms1     = ("I" apostrophe "m"|[Yy]"ou" apostrophe "re"|[Hh]"e" apostrophe "s"|
+                             [Ss]"he" apostrophe "s" |
+                             [Ii]"t" apostrophe "s"|[Tt]"hey" apostrophe "re"|[Ww]"e" apostrophe "re") |
+                            (("I"|[Yy]"ou"|[Tt]"hey"|[Ww]"e")  apostrophe "ve") |
+                            (("I"|[Yy]"ou"|[Hh]"e"|[Ss]"he"|[Ii]"t"|[Tt]"hey"|[Ww]"e") apostrophe "d") |
+                            (("I"|[Yy]"ou"|[Hh]"e"|[Ss]"he"|[Ii]"t"|[Ww]"e"|[Tt]"hey")  apostrophe  "ll") |
+                            (([Ll]"et"|[Tt]"hat"|[Tt]"here") apostrophe "s");
+    
+    contracted_forms2     = ((([Dd]"o")|([Dd]"oes")|([Dd]"id")|([Hh]"as")|("have")|([Hh]"ad")|
+                              ([Aa]"re")|([Ss]"hould")|([Ww]"as")|([Ww]"o")|([Ww]"ould")|([Ii]"s")|
+                              ([Mm]"ust")|([Mm]"ight")|([Cc]"a")|([Cc]"ould")|([Nn]"eed")|([Ww]"ere")|([Aa]"i")) "n" apostrophe "t") ;
+
+    contracted_forms3     = "o" apostrophe "clock" | "Ma" apostrophe "am" ;
+
+    ne_annotation         = "<ne class=" 
+                            (
+                             (doublequote predefined_ne_class doublequote) | 
+                             (json_escaped_quote predefined_ne_class json_escaped_quote)
+                            ) 
+                            ">" ;
+                            
+    ne_annotation_end     = "</ne>" ;
+
+    htlink                = ("http://" | "https://")? ;
+    ftplink               = ("ftp://") ;
+    mailtolink            = ("mailto:") ;
+    filelink              = ("file://") ;
+
+    url_atom              = (a_z_letter|[0-9]) ((a_z_letter|[0-9]|"-")*) (a_z_letter|[0-9]) ;
+    url_path              = ("/" (url_atom))+ ("/"?) ;
+
+    gtld                  = ("aero"|"com"|"net"|"org"|"info"|"biz"|"name"|"mil"|"edu"|"arpa"|"coop"|"gov"|"int"|"museum"|"pro"|"eu") ;
+    cctlda                = ("a"[c-gilm-oq-uwxz]) ;
+    cctldb                = ("b"[abd-jl-oqr-tvwyz]) ;
+    cctldc                = ("c"[acdfghiklmnoruvwxyz]) ;
+    cctldd                = ("d"[ejkmoz]) ;
+    cctlde                = ("e"[ceghrstu]) ;
+    cctldf                = ("f"[ijkmor]) ;
+    cctldg                = ("g"[abdefghilmnpqrstuwy]) ;
+    cctldh                = ("h"[kmnrtu]) ;
+    cctldi                = ("i"[delmnoqrst]) ;
+    cctldj                = ("j"[emop]) ;
+    cctldk                = ("k"[eghimnprwyz]) ;
+    cctldl                = ("l"[abcikrstuvy]) ;
+    cctldm                = ("m"[acdefghklmnopqrstuvwxyz]) ;
+    cctldn                = ("n"[acefgilopruz]) ;
+    cctldo                = ("o"[m]) ;
+    cctldp                = ("p"[aefghklmnrstwy]) ;
+    cctldq                = ("q"[a]) ;
+    cctldr                = ("r"[eosuw]) ;
+    cctlds                = ("s"[abcdeghijklmnorstuvxyz]) ;
+    cctldt                = ("t"[cdfghjklmnoprtvwz]) ;
+    cctldu                = ("u"[agkmsyz]) ;
+    cctldv                = ("v"[aceginu]) ;
+    cctldw                = ("w"[fs]) ;
+    cctldy                = ("y"[et]) ;
+    cctldz                = ("z"[amw]) ;
+    cctldam               = cctlda|cctldb|cctldc|cctldd|cctlde|cctldf|cctldg|cctldh|cctldi|cctldj|cctldk|cctldl|cctldm|cctldn|cctldm ;
+    cctldnz               = cctldo|cctldp|cctldq|cctldr|cctlds|cctldt|cctldu|cctldv|cctldw|cctldy|cctldz ;
+    cctld                 = cctldam | cctldnz ;
+    tld                   = (cctld|gtld) ;
+    youtube               = htlink ("www.youtube.com/watch?v=" ([a-zA-Z0-9]+)) | ("youtu.be/"([a-zA-Z0-9]+)) ;
+    link                  = ((htlink|ftplink|mailtolink|filelink) (url_atom ".")+ tld ((url_path)?) ) ;
+    email                 = ([_a-zA-z0-9-]+) (((".") ([_a-zA-z0-9-]+))?) "@" (url_atom ".")+ tld ;
+                             
+    abbrev                = "etc."|"lb."|"ft."|"min."|"No."|"no." ;
+    day                   = ((([0-2])? digit) | "30" | "31" ) ;
+    month                 = ((("0"? [1-9]) | "10" | "11" | "12") ) ;
+    year2                 = (digit {2}) ;
+    year4                 = (digit {4}) ;
+    year                  = year2 | year4 ;
+    date                  = (day "." month "." year?) ;
+    opening_bracket       = [<({\[] ;
+    closing_bracket       = [>)}\]] ;
+    
+    opening_quote         = ["'] | "``" |
+                            "\\u20bb" | ([\xc2][\xbb]) |
+                            "\\u2018" | ([\xe2][\x80][\x98]) |
+                            "\\u201c" | ([\xe2][\x80][\x9c]) |
+                            "\\u201e" | ([\xe2][\x80][\x9e]) |
+                            "\\u201a" | ([\xe2][\x80][\x9a]) |
+                            "\\u203a" | ([\xe2][\x80][\xba]) |
+                            left_double_quote ;
+
+    closing_quote         = ["'] | "''" |
+                            "\\u201d" | ([\xe2][\x80][\x9d]) | 
+                            "\\u2033" | ([\xe2][\x80][\xb3]) |
+                            "\\u00ab" | ([\xc2][\xab]) |
+                            "\\u00bc" | ([\xca][\xbc]) |
+                            "\\u02ee" | ([\xcb][\xae]) |
+                            "\\u2019" | ([\xe2][\x80][\x99]) |
+                            "\\u2039" | ([\xe2][\x80][\xb9]) ;
+  */
+
+  //U+201B		0xe2 0x80 0x9b	SINGLE HIGH-REVERSED-9 QUOTATION MARK
+  //U+201F		0xe2 0x80 0x9f	DOUBLE HIGH-REVERSED-9 QUOTATION MARK
+
+  // Store token start
+  token_begin = cursor;
+
+  if (cursor >= limit) {
+    // cursor reached the end of the line
+    ++current_global_offs;
+    return t_return(ttEOS);
+  }
+  
+  // Important: 
+  // - Order patterns by importance
+  // - Provide a catch-all pattern at the end, otherwise the return value is undefined
+  
+  /*!re2c
+    ne_annotation                                                   { return anno_return(ttNEAnnotation); }
+    ne_annotation_end                                               { return anno_return(ttNEAnnotationEnd); }
+    html_entity                                                     { return t_return(ttHTMLEntity); }
+    html                                                            { return t_return(ttHTML_XML); }
+    link|youtube                                                    { return t_return(ttURL); }
+    email                                                           { return t_return(ttEmail); }
+    contracted_forms1|contracted_forms2|contracted_forms3           { return t_return(ttWord); }
+    special_words|special_names|irish_names_with_O                  { return t_return(ttWord); }
+    geo_abbrev                                                      { return t_return(ttWord); }
+    middle_initial                                                  { return t_return(ttWord); }
+    genitive_suffix                                                 { return t_return(ttGenSuffix); }
+    word_with_num                                                   { return t_return(ttWord); }
+    word                                                            { return t_return(ttWord); }
+    apostrophe [2-9] "0s"                                           { return t_return(ttWord); }
+    number                                                          { return t_return(ttNumber); }
+    abbrev                                                          { return t_return(ttAbbrev); }
+    opening_bracket                                                 { return t_return(ttLeftBracket); }
+    closing_bracket                                                 { return t_return(ttRightBracket); }
+    opening_quote                                                   { return t_return(ttLeftQuote); }
+    closing_quote                                                   { return t_return(ttRightQuote); }
+    "..." | ellipsis                                                { return t_return(ttPunct); }
+    dash                                                            { return t_return(ttDash); }
+    punct                                                           { return t_return(ttPunct); } 
+    currency                                                        { return t_return(ttCurrency); }
+    symbol                                                          { return t_return(ttSymbol); }
+    json_escaped_sym                                                { return t_return(ttJSONEscapedSymbol); }
+    json_escaped_nl                                                 { return t_return(ttJSONEscapedNewline); }
+    json_escaped_quote                                              { return t_return(ttJSONEscapedQuote); }
+    unicode_point                                                   { return t_return(ttUnicodePoint); }
+    ws                                                              { 
+                                                                      current_global_offs += (cursor-token_begin);
+                                                                      goto next_token_start; /* Ignore white space */ 
+                                                                    }
+    valid_utf8_sequence                                             { return t_return(ttRest); }
+    any                                                             { return t_return(ttRest); }
+  */
+}

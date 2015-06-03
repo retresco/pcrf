@@ -1,0 +1,1 @@
+re2c -is next_token.re2c > ..\include\next_token.cpp
