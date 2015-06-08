@@ -13,7 +13,9 @@ model = pcrf_python.SimpleLinearCRFFirstOrderModel("../rtr/rtr.model")
 crf_applier = pcrf_python.FirstOrderLCRFApplier(model,config)
 
 # Apply to input string
-#utf8_string = "Merkel and Obama met at the G7 summit at Schloss Elmau near Garmisch-Partenkirchen."
+utf8_string = "Merkel and Obama met at the G7 summit at Schloss Elmau near Garmisch-Partenkirchen."
+json_string = crf_applier.apply_to(utf8_string)
+print json_string
 
 # Apply to file
 json_string = crf_applier.apply_to_text_file("cl-final.txt")
