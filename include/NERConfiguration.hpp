@@ -1,15 +1,17 @@
 ////////////////////////////////////////////////////////////////////////////////
 // NERConfiguration.hpp
-// TH, March 2015
+// TH, June 2015
 // TODO:
-//   * Column description scheme
+//   * Windows CR/LF
+//   * quiet mode
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NERCONFIGURATION_HPP
-#define __NERCONFIGURATION_HPP
+#ifndef __NERCONFIGURATION_HPP__
+#define __NERCONFIGURATION_HPP__
 
 #include <string>
 #include <iostream>
+#include <fstream>
 #include <map>
 
 #include <boost/tokenizer.hpp>
@@ -25,13 +27,25 @@ private:
   typedef boost::tokenizer<CharSeparator> Tokenizer;
 
 public:
+  /// Empty configuration
   NERConfiguration() 
   : feats(0), anno_scheme(nerBIO), default_label("OTHER"), output_tok(false), 
     running_text_input(false), order(1), context_window_size(4) {}
 
-  NERConfiguration(std::istream& config_in) : feats(0), anno_scheme(nerBIO), output_tok(false), order(1)
+  /// Read configuration from text stream
+  NERConfiguration(std::istream& config_in) 
+  : feats(0), anno_scheme(nerBIO), output_tok(false), order(1)
   {
     read_config_file(config_in);
+  }
+
+  /// Read configuration from text file
+  NERConfiguration(std::string config_file) 
+  : feats(0), anno_scheme(nerBIO), output_tok(false), order(1)
+  {
+    std::ifstream config_in(config_file.c_str());
+    if (config_in)
+      read_config_file(config_in);
   }
 
   /// Read the configuration from an input stream

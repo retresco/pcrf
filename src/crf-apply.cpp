@@ -34,7 +34,7 @@ typedef std::vector<std::string>   StringVector;
 
 // Prototypes
 void parse_options(int argc, char* argv[], std::string&, StringVector&, NERConfiguration&, unsigned&, bool&, bool&, std::string&);
-template<unsigned O> void load_and_apply_model(std::ifstream&,const std::string&,const StringVector&,const NERConfiguration&, bool, const std::string&);
+template<unsigned O> void load_and_apply_model(std::ifstream&,const std::string&,const StringVector&,const NERConfiguration&, bool, bool, const std::string&);
 template<unsigned O> void load_clue_lists(CRFApplier<O>&);
 void usage();
 
@@ -52,8 +52,8 @@ int main(int argc, char* argv[])
 
   parse_options(argc, argv, model_file, input_files, ner_config, order, running_text, eval_mode, output_format);
 
-  if (running_text)
-    ner_config.set_running_text_input(true);
+//  if (running_text)
+//    ner_config.set_running_text_input(true);
 
   if (order > 3) {
     std::cerr << "crf-apply: Error: Currently, only the orders 1, 2 or 3 are supported" << std::endl;
@@ -67,18 +67,18 @@ int main(int argc, char* argv[])
   }
 
   if      (order == 1) 
-    load_and_apply_model<1>(model_in, model_file, input_files, ner_config, eval_mode, output_format);
+    load_and_apply_model<1>(model_in, model_file, input_files, ner_config, running_text, eval_mode, output_format);
   else if (order == 2) 
-    load_and_apply_model<2>(model_in, model_file, input_files, ner_config, eval_mode, output_format);
+    load_and_apply_model<2>(model_in, model_file, input_files, ner_config, running_text, eval_mode, output_format);
   else if (order == 3) 
-    load_and_apply_model<3>(model_in, model_file, input_files, ner_config, eval_mode, output_format);
+    load_and_apply_model<3>(model_in, model_file, input_files, ner_config, running_text, eval_mode, output_format);
 }
 
 
 template<unsigned ORDER>
 void load_and_apply_model(std::ifstream& model_in, const std::string& model_file, 
                           const StringVector& input_files, const NERConfiguration& ner_config, 
-                          bool eval_mode, const std::string& output_format)
+                          bool running_text, bool eval_mode, const std::string& output_format)
 {
   std::cerr << "Loading model '" << model_file << "'\n";
   SimpleLinearCRFModel<ORDER> crf_model(model_in,true);
@@ -92,7 +92,8 @@ void load_and_apply_model(std::ifstream& model_in, const std::string& model_file
   NERAnnotationOutputter ner_annotation_outputter(std::cout);
   JSONOutputter json_outputter(std::cout);
   NEROutputterBase* outputter = &one_word_per_line_outputter;
-  if (output_format == "JSON") outputter = &json_outputter;
+  if (output_format == "JSON" || output_format == "json") 
+    outputter = &json_outputter;
   //if (!force_tsv_output && ner_config.input_is_running_text()) 
   //  outputter = &json_outputter; // &ner_annotation_outputter;
 
@@ -111,13 +112,13 @@ void load_and_apply_model(std::ifstream& model_in, const std::string& model_file
     time_t t0 = clock();
     outputter->prolog();
     if (eval_mode) {
-      EvaluationInfo e = crf_applier.evaluation_of(test_data_in,*outputter);
+      EvaluationInfo e = crf_applier.evaluation_of(test_data_in,*outputter,running_text);
       std::cerr << "  Accuracy:  " << (e.accuracy()*100) << "%\n";
       std::cerr << "  Precision: " << (e.precision()*100) << "%\n";
       std::cerr << "  Recall:    " << (e.recall()*100) << "%\n";
     }
     else {
-      crf_applier.apply_to(test_data_in,*outputter);
+      crf_applier.apply_to(test_data_in,*outputter,running_text);
     }
     outputter->epilog();
     unsigned t = clock() - t0;
@@ -149,7 +150,7 @@ void parse_options(int argc, char* argv[], std::string& model_file,
     TCLAP::CmdLine cmd("crf-apply -- Applies a trained CRF model to a input textfile\n",' ',"1.0");
     StringValueArg config_file_arg("c","config","Configuration file",true,"","filename");
     StringValueArg model_file_arg("m","model","Binary model file",true,"","filename");
-    IntValueArg order_arg("o","order","Model order",true,1,"1,2 or 3");
+    IntValueArg order_arg("o","order","Model order",false,1,"1,2 or 3");
     BoolArg running_text_arg("r","running-text","Running text (as opposed to tab-separated column style data)",false);
     BoolArg eval_mode_arg("e","eval","Puts crf-apply into evaluation mode",false);
     StringValueArg output_format_arg("f","format","Output format ",false,"TSV","TSV,JSON");

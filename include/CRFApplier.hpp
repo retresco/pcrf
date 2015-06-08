@@ -34,20 +34,20 @@ public:
   }
 
   template<typename OUTPUT_METHOD>
-  void apply_to(std::istream& text_in, OUTPUT_METHOD& outputter)
+  void apply_to(std::istream& text_in, OUTPUT_METHOD& outputter, bool running_text)
   {
     EvaluationInfo e;
-    if (crf_config.input_is_running_text())
+    if (running_text)
       apply_to_running_text(text_in,outputter,false,e);
     else 
       apply_to_column_data(text_in,outputter,false,e);
   }
 
   template<typename OUTPUT_METHOD>
-  EvaluationInfo evaluation_of(std::istream& text_in, OUTPUT_METHOD& outputter)
+  EvaluationInfo evaluation_of(std::istream& text_in, OUTPUT_METHOD& outputter, bool running_text)
   {
     EvaluationInfo e(crf_config.get_default_label());
-    if (crf_config.input_is_running_text())
+    if (running_text)
       apply_to_running_text(text_in,outputter,true,e);
     else 
       apply_to_column_data(text_in,outputter,true,e);

@@ -333,6 +333,22 @@ public:
       std::cerr << "Error: invalid model file\n";
   }
    
+  /// Reads in a model from binary file named 'model_file'
+  SimpleLinearCRFModel(const std::string& model_file) 
+  : num_transitions(0), good(false)
+  {
+    std::ifstream model_in(model_file.c_str());
+    if (model_in) {
+      good = read_model(model_in);
+      if (!good) 
+        std::cerr << "Error: invalid model file '" << model_file << "'\n";
+    }
+    else {
+      good = false;
+      std::cerr << "Error: Unable to open '" << model_file << "'\n";
+    }
+  }
+
   /// Returns an iterator over the incoming transitions of y (this is used for first-order CRFs)
   inline TransitionConstIterator ingoing_transitions_of(LabelID y) const
   {
