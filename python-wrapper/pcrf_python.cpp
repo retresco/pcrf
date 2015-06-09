@@ -1,5 +1,9 @@
 // Python wrapper for PCRF
 
+#include <string>
+#include <fstream>
+#include <sstream>
+
 #include <boost/python.hpp>
 
 #include <NERConfiguration.hpp>
@@ -13,21 +17,30 @@ class LCRFApplier
 {
 public:
   LCRFApplier(const SimpleLinearCRFModel<ORDER>& m, const NERConfiguration& conf)
-  : crf_model(m), config(conf), crf_applier(m,conf)
-  {}
+  : crf_model(m), config(conf), crf_applier(m,conf), out_sstr(new std::stringstream)
+  {
+    json_outputter = new JSONOutputter(*out_sstr,false);
+    tsv_outputter = new NEROneWordPerLineOutputter(*out_sstr);
+    current_outputter = tsv_outputter;
+  }
+  
+  ~LCRFApplier()
+  {
+    delete json_outputter;
+    delete tsv_outputter;
+  }
   
   /// Apply model to input string
   std::string apply_to(std::string input)
   {
     std::stringstream in_sstr(input);
-    std::stringstream out_sstr;
-    JSONOutputter json_outputter(out_sstr,false);
+    out_sstr->clear();
+    
+    current_outputter->prolog();
+    crf_applier.apply_to(in_sstr,*current_outputter,true);
+    current_outputter->epilog();
 
-    json_outputter.prolog();
-    crf_applier.apply_to(in_sstr,json_outputter,true);
-    json_outputter.epilog();
-
-    return out_sstr.str();
+    return out_sstr->str();
   }
 
   // Apply to UTF-8 text file
@@ -36,21 +49,30 @@ public:
     std::ifstream in(filename.c_str());
     if (!in) return "";
 
-    std::stringstream out_sstr;
-    JSONOutputter json_outputter(out_sstr,false);
+    out_sstr->clear();
+    current_outputter->prolog();
+    crf_applier.apply_to(in,*current_outputter,true);
+    current_outputter->epilog();
 
-    json_outputter.prolog();
-    crf_applier.apply_to(in,json_outputter,true);
-    json_outputter.epilog();
-
-    return out_sstr.str();
+    return out_sstr->str();
   }
   
+  void set_output_mode(std::string mode)
+  {
+    if (mode == "json") current_outputter = json_outputter;
+    else if (mode == "tsv") current_outputter = tsv_outputter;
+    else std::cerr << "PCRF: Error: Unknown output mode" << std::endl;
+  }
   
+    
 private:
   const SimpleLinearCRFModel<ORDER>&  crf_model;
   const NERConfiguration&             config;
-  CRFApplier<ORDER>                   crf_applier; 
+  CRFApplier<ORDER>                   crf_applier;
+  std::shared_ptr<std::stringstream>  out_sstr;
+  JSONOutputter*                      json_outputter;
+  NEROneWordPerLineOutputter*         tsv_outputter;
+  NEROutputterBase*                   current_outputter;
 }; // LCRFApplier
 
 
@@ -73,6 +95,7 @@ BOOST_PYTHON_MODULE(pcrf_python)
   class_<FirstOrderLCRFApplier>("FirstOrderLCRFApplier",
                                 init<const SimpleLinearCRFFirstOrderModel&, const NERConfiguration&>()).
     def("apply_to",&FirstOrderLCRFApplier::apply_to).
-    def("apply_to_text_file",&FirstOrderLCRFApplier::apply_to_text_file);    
+    def("apply_to_text_file",&FirstOrderLCRFApplier::apply_to_text_file).
+    def("set_output_mode",&FirstOrderLCRFApplier::set_output_mode);    
 }
 

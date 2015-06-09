@@ -94,8 +94,6 @@ void load_and_apply_model(std::ifstream& model_in, const std::string& model_file
   NEROutputterBase* outputter = &one_word_per_line_outputter;
   if (output_format == "JSON" || output_format == "json") 
     outputter = &json_outputter;
-  //if (!force_tsv_output && ner_config.input_is_running_text()) 
-  //  outputter = &json_outputter; // &ner_annotation_outputter;
 
   //std::cerr << "Reading in NE lists:";
   //load_clue_lists(crf_applier);
@@ -201,7 +199,6 @@ void parse_options(int argc, char* argv[], std::string& model_file,
 
 void usage()
 {
-  std::cerr << "crf-apply" << " (order=" << MODEL_ORDER << ")" << std::endl;
   std::cerr << "Usage: " << "crf-apply" << " -c CONFIG-FILE -m MODEL-FILE [-e] TEXT-FILE ..." << std::endl << std::endl;
   std::cerr << "  CONFIG-FILE is the configuration file" << std::endl;
   std::cerr << "  MODEL-FILE is the binary file as produced by crf-train or crf-convert" << std::endl;

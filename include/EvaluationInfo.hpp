@@ -8,7 +8,8 @@ struct EvaluationInfo
   EvaluationInfo(const std::string& zh = "") 
   : zero_hypothesis(zh), total_labels(0), correct_labels(0), 
     true_positive_labels(), true_negative_labels(), 
-    false_positive_labels(), false_negative_labels() {}
+    false_positive_labels(), false_negative_labels() 
+  {}
 
   float accuracy() const 
   {

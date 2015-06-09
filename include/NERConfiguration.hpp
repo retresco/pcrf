@@ -62,7 +62,11 @@ public:
       tokens.assign(tokenizer.begin(),tokenizer.end());
       if (tokens.size() == 3 && tokens[1] == "=") {
         if (tokens[0] == "Columns")                                         set_columns(tokens[2]);
-        else if (tokens[0] == "DefaultLabel")                               default_label = tokens[2];
+        else if (tokens[0] == "DefaultLabel") {
+          default_label = tokens[2];
+          std::cerr << "  DefaultLabel     = " << default_label << std::endl;
+        }
+        
         else if (tokens[0] == "NamedEntities")                              ne_list_filename = tokens[2];
         else if (tokens[0] == "PersonsFilename")                            personnames_list_filename = tokens[2];
         else if (tokens[0] == "LeftContextFilename")                        right_context_filename = tokens[2];

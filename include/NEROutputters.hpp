@@ -5,6 +5,8 @@
 #include <iterator>
 #include <algorithm>
 
+#include <boost/lexical_cast.hpp>
+
 #include "TokenWithTag.hpp"
 
 /// Base class for outputter function objects
@@ -18,15 +20,12 @@ struct NEROutputterBase
 }; // NEROutputterBase
 
 
-/// Output for one word per line on a stream
+/// Output for one word plus annotation per line on a stream
 struct NEROneWordPerLineOutputter : public NEROutputterBase
 {
   NEROneWordPerLineOutputter(std::ostream& o) : out(o) {}
 
-  void prolog() 
-  {
-  }
-  
+  void prolog() {}
   void epilog() {}
 
   /// Application mode
@@ -53,18 +52,23 @@ struct NEROneWordPerLineOutputter : public NEROutputterBase
 /// Output results as structured JSON output on a string stream
 struct JSONOutputter : public NEROutputterBase
 {
-  JSONOutputter(std::ostream& o) : out(o), entity_outputted(false) {}
+  JSONOutputter(std::ostream& o, bool pp=true) 
+  : out(o), pretty_print(pp), entity_outputted(false) {}
 
   void prolog()
   {
-    out << "{\n";  
-    out << "  \"entities\": [\n";
+    out << "{";
+    if (pretty_print) out << std::endl;  
+    out << (pretty_print ? "  " : "") << "\"entities\":[";
+    if (pretty_print) out << std::endl;
   }
 
   void epilog()
   {
-    out << "\n";
-    out << "  ]\n}\n";
+    if (pretty_print)
+      out << std::endl << "  ]" << std::endl << "}" << std::endl;
+    else 
+      out << "]}";
   }
 
   /// Application mode
@@ -124,26 +128,42 @@ struct JSONOutputter : public NEROutputterBase
   /// Evaluation mode
   void operator()(const TokenWithTagSequence& sentence, const LabelSequence& inferred_labels)
   {
+  // Not yet
   }
 
 private:
   void output_ne(const std::string& surface, const std::string& label, unsigned start, unsigned end) 
   {
-    const char* indent = "      ";
+    std::string indent((pretty_print ? 6 : 0), ' ');
     const char* double_quote = "\"";
     
-    if (entity_outputted) out << ",\n";
-    out << "    {\n";
-    out << indent << "\"surface\":" << " " << double_quote << surface << double_quote << ",\n";
-    out << indent << "\"start\":" << " " << start << ",\n";
-    out << indent << "\"end\":" << " " << end << ",\n";
-    out << indent << "\"entity_type\":" << " " << double_quote << label << double_quote << "\n";
-    out << "    }";
+    if (entity_outputted) out << ",";
+    if (pretty_print) out << std::endl;
+    out << std::string((pretty_print ? 4 : 0),' ') << "{";
+    if (pretty_print) out << std::endl;
+    output_key_val("surface",surface);
+    output_key_val("entity_type",label);
+    output_key_val("start",boost::lexical_cast<std::string>(start));
+    output_key_val("end",boost::lexical_cast<std::string>(end),true);
+    out << std::string((pretty_print ? 4 : 0),' ') << "}";
     entity_outputted = true;
   }
 
+  void output_key_val(const std::string& key, const std::string& val, bool last=false)
+  {
+    const std::string indent((pretty_print ? 6 : 0), ' ');
+    const char* double_quote = "\"";
+    
+    out << indent << double_quote << key << double_quote << ":";
+    if (pretty_print) out << " ";
+    out << double_quote << val << double_quote;
+    if (!last) out << ",";
+    if (pretty_print) out << std::endl;
+  } 
+
 private:
   std::ostream& out;      ///< Output stream
+  bool pretty_print;      ///< Add indentation and newlines to the output
   bool entity_outputted;  ///< Used for placing syntactically correct commas in the JSON output
 }; // JSONLineOutputter
 
