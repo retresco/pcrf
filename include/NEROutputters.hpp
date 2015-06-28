@@ -99,6 +99,7 @@ struct JSONOutputter : public NEROutputterBase
             if (ne_type_suff == "_B") {
               mwe = t->token;
               ne_start_offset = t->position.offset;
+              ne_end_offset = t->position.offset+t->position.length;
               in_ne = true;
             }
           }
