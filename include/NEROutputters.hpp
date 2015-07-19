@@ -57,6 +57,7 @@ struct JSONOutputter : public NEROutputterBase
 
   void prolog()
   {
+    entity_outputted = false;
     out << "{";
     if (pretty_print) out << std::endl;  
     out << (pretty_print ? "  " : "") << "\"entities\":[";
