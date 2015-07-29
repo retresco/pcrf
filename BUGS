@@ -1,0 +1,1 @@
+- Bug in tokenizer loop: single sequence will not be processed

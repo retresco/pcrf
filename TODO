@@ -1,0 +1,3 @@
+- Put everything into pcrf namespace
+- Generalise and rename output functions objects
+- Add UTF-8/Latin encoding information to the binary model file
