@@ -1,0 +1,71 @@
+.TH crf-train 1 "24 July 2015" "1.0" "crf-train man page"
+
+.SH NAME
+.B crf-train 
+\- train a linear Conditional Random Field model
+
+.SH SYNOPSIS
+.B crf-train 
+.B -o 
+{1,2,3} 
+.B -n 
+INTEGER 
+.B -m 
+MODELFILE 
+[
+.B -v
+] 
+TRAINING-CORPUS
+ 
+.SH OPTIONS
+
+.TP
+.BR -o " " {1,2,3} ",  "  --order {1,2,3}
+Model order. 
+The order of a CRF-model is roughly the same as the N in an N-gram model.
+The model order must match the one specified during crf-train.
+
+.TP
+.BR -n " "INTEGER ",  " --num-iterations " " INTEGER
+Number of iterations the training algorithms are applied to the training data
+
+.TP
+.BR -m " " MODELFILE ",  " --model " " MODELFILE
+Binary file where the trained model is written to
+
+.TP
+.BR -v ",  " --verbose
+Outputs the model also in textual form
+
+.IP -h ",  " --help
+Displays usage information and exits.
+
+.SH DESCRIPTION
+.B crf-train 
+implements several supervised training algorithms for 
+.B Linear Conditional Random Fields 
+(LCRFs). 
+LCRFs are used for sequence labeling tasks like tagging, named-entity recognition etc.
+.B crf-train 
+requires an annotated training corpus and creates a binary file containing the LCRF.
+.B crf-train 
+supports LCRFs of the order 1, 2 or 3. 
+The order of a model is the number of previous output labels are taken into account 
+to determine the current output label. 
+
+.SH SEE ALSO
+.B crf-annotate(1)
+, 
+.B crf-apply(1)
+, 
+.B crf-train(5)
+, 
+.B crf-annotate(5)
+.
+
+.SH BUGS
+No known bugs.
+
+.SH AUTHOR
+Thomas Hanneforth, University of Potsdam (Thomas.Hanneforth@uni-potsdam.de)
+

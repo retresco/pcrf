@@ -1,0 +1,79 @@
+.TH man 1 "24 July 2015" "1.0" "crf-annotate man page"
+
+.SH NAME
+.B crf-annotate 
+- Annotate labeled training data with user-specifiable attributes
+
+.SH SYNOPSIS
+.B crf-annotate 
+.B -c 
+CONFIGFILE 
+[
+.B -r
+]
+[
+.B -t
+] 
+SUPERVISED-TRAINING-DATA
+ 
+.SH OPTIONS
+
+.TP
+.BR -c " "CONFIGFILE ",  " --config " " CONFIGFILE
+Configuration file which determines the features to be annotated to the input tokens
+during application.
+See crf-conf(5) for the format of this configuration file.
+
+.TP 
+.BR -r ", " --runnning-text
+If set, 
+.B crf-annotate 
+assumes that is input is UTF-8 encoded running text. 
+crf-annotate then extracts sequences from that input by using an heuristic 
+sentence segmenter (for English). 
+The sequences are tokenised, annotated with the user-specified attributes 
+and then written to the output.
+If not set, 
+.B crf-annotate
+assumes tab-separated input data (see crf-annotate(5)).
+
+.TP 
+.BR -t
+Add the input token also to the output
+
+.TP 
+.BR -h ", " --help
+Displays usage information and exits.
+
+.SH DESCRIPTION
+.B crf-annotate 
+is usually the first step for training linear Conditional Random Fields (LCRFs).
+.B crf-annotate
+reads labeled sequences from the text file SUPERVISED-TRAINING-DATA
+(whose elements consist in the simplest case of an input token and a given output label) 
+and adds attributes to it. Attributes are either derived from the input token and its contexts 
+(for example N-gram features) or can be taken from external ressources. 
+.B crf-annotate 
+handles running-text or tab-separated data and writes the results to stdout.
+
+.SH SEE ALSO
+.B crf-train(1)
+, 
+.B crf-annotate(1)
+.B 
+, 
+.B crf-apply(1)
+,
+.B crf-train(5)
+,
+.B crf-annotate(5)
+,
+.B crf-conf(5)
+.
+
+.SH BUGS
+No known bugs.
+
+.SH AUTHOR
+Thomas Hanneforth, University of Potsdam (Thomas.Hanneforth@uni-potsdam.de)
+

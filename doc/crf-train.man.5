@@ -1,0 +1,67 @@
+.TH crf-train 5 "24 July 2015" "1.0" "crf-train file formats man page"
+
+.SH NAME
+.B crf-train file format
+
+.SH INPUT DESCRIPTION
+The input to 
+.B crf-train
+are sequences of 
+.B labeled and annotated sequences
+.
+Each labeled and annotated sequence consists out of lines with at least two columns 
+(separated by tabs) each containing an input token followed by the corresponding 
+output label at a sequence of features.
+Sequences are separated by each other by an empty line.
+More formally, the input is specified by the following regular expressions:
+
+.br 
+<INPUT-CORPUS> = (<LABELED-ANNOTATED-SEQ> <NL>)+
+.br 
+<LABELED-ANNOTATED-SEQ> = (<INPUT-TOKEN> <TAB> <OUTPUT-LABEL> (<FEATURES>?) <NL>)+
+.br 
+<INPUT-TOKEN> = string
+.br 
+<OUTPUT-LABEL> = string
+.br
+<FEATURES> = FEAT (<TAB> FEAT)*
+.br 
+<FEAT> = string
+
+
+.SH INPUT EXAMPLE
+
+This        DT  w[0]=This  w[-1..0]=BOS|This  w[0..1]=This|is  
+.br
+is          VBZ w[0]=is  w[-1..0]=This|is  w[0..1]=is|a
+.br
+a           DT  w[0]=a  w[-1..0]=is|a  w[0..1]=a|short
+.br
+short       JJ  w[0]=short  w[-1..0]=a|short  w[0..1]=short|sentence
+.br
+sentence    NN   w[0]=sentence  w[-1..0]=short|sentence  w[0..1]=sentence|.
+.br
+\.           \.    w[0]=.  w[-1..0]=sentence|.  w[0..1]=.|EOS
+.br
+.br
+
+This        RB  w[0]=So  w[-1..0]=BOS|So  w[0..1]=So|is  
+.br
+is          VBZ w[0]=is  w[-1..0]=So|is  w[0..1]=is|this
+.br
+this        DT  w[0]=this  w[-1..0]=is|this  w[0..1]=is|.  
+.br
+\.           \.   w[0]=.  w[-1..0]=is|.  w[0..1]=.|EOS
+
+
+.SH OUTPUT DESCRIPTION
+
+.SH SEE ALSO
+crf-train(1)
+
+.SH TODO
+Document CRF binary file format.
+
+.SH AUTHOR
+Thomas Hanneforth, University of Potsdam (Thomas.Hanneforth@uni-potsdam.de)
+

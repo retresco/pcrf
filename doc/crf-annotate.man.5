@@ -1,0 +1,60 @@
+.TH crf-annotate 5 "24 July 2015" "1.0" "crf-annotate file formats man page"
+
+.SH NAME
+.B crf-annotate file format
+
+.SH INPUT DESCRIPTION
+The input to 
+.B crf-annotate
+are sequences of labeled sequences.
+Each labeled sequence consists out of two-column lines (separated by a tab)
+each containing an input token followed by the corresponding output label.
+Labeled sequences are separated by each other by an empty line.
+More formally, the input is specified by the following regular expressions:
+
+.br 
+<INPUT-CORPUS> = (<LABELED-SEQ> <NL>)+
+.br 
+<LABELED-SEQ>  = (<INPUT-TOKEN> <TAB> <OUTPUT-LABEL> <NL>)+
+.br 
+<INPUT-TOKEN>  = <STRING>
+.br 
+<OUTPUT-LABEL> = <STRING>
+
+.SH INPUT EXAMPLE
+
+This        DT  
+.br
+is          VBZ
+.br
+a           DT
+.br
+short       JJ
+.br
+sentence    NN
+.br
+"."         .
+.br
+
+So          RB  
+.br
+is          VBZ
+.br
+this        DT  
+.br
+.           .
+
+.SH OUTPUT DESCRIPTION
+Each input line is copied over to the output and is annotated with a number of features
+which are derived from the input tokens. See crf-conf(5) for details.
+
+
+.SH SEE ALSO
+.B crf-train(1)
+,
+.B crf-conf(5)
+
+
+.SH AUTHOR
+Thomas Hanneforth, University of Potsdam (Thomas.Hanneforth@uni-potsdam.de)
+

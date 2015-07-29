@@ -1,0 +1,105 @@
+.TH man 1 "24 July 2015" "1.0" "crf-apply man page"
+
+.SH NAME
+crf-apply \- Applies a Conditional Random Field model to iput data
+
+.SH SYNOPSIS
+.B crf-apply 
+.B \-c 
+CONFIGFILE 
+.B \-m 
+MODELFILE
+[
+.B -r
+] 
+[
+.B -e
+] 
+ 
+.SH OPTIONS
+
+.TP
+.BR -c " "CONFIGFILE ",  " --config " " CONFIGFILE
+Configuration file which determines the features to be annotated to the input tokens
+during application.
+See crf-conf(5) for the format of this configuration file.
+
+.TP
+.BR -o " " {1,2,3} ",  "  --order {1,2,3}
+Model order. 
+The order of a CRF-model is roughly the same as the N in an N-gram model.
+The model order must match the one specified during crf-train.
+
+.TP
+.BR -m " " MODELFILE ",  " --model " " MODELFILE
+The CRF-model to be applied (as created by crf-train(1))
+
+.TP
+.BR -f " " FORMAT ",  " --format " " FORMAT
+The output format. Currently, 
+.B crf-apply
+supports the following output formats:
+a)
+.B tsv 
+outputs tab-separated data,
+b)
+.B json
+outputs JSON format, and
+c)
+.B single-line
+outputs first the whole input token sequence followed a tab followed by the whole label sequence.
+Between the sequences, a newline is outputted.
+
+.TP 
+.BR -r ", " --runnning-text
+If set, 
+.B crf-apply 
+assumes that is input is UTF-8 encoded running text. 
+crf-annotate then extracts sequences from that input by using an heuristic 
+sentence segmenter (for English). 
+The sequences are tokenised, annotated with the user-specified attributes 
+and then written to the output.
+If not set, 
+.B crf-apply
+assumes tab-separated input data (see crf-annotate(1)).
+
+.TP 
+.BR -e ", " --eval
+Switches on evaluation mode (requires input annotated with the correct labels).
+Evaluation is currently only supported for tab-separated input and output data.
+
+.TP 
+.BR -h ", " --help
+Displays usage information and exits.
+
+.SH DESCRIPTION
+.B crf-apply 
+applies a trained CRF-model (see crf-train(1)) to UTF-8 encoded input text data.
+Text data can be either running text or tab-separated column data.
+The output of 
+.B crf-apply
+can be rendered in different formats (see -f option) 
+and is written to stdout.
+crf-apply also has an evaluation mode which requires input annotated with the correct labels.
+In that case, 
+.B crf-apply
+also outputs accuracy, precison, recall and F1-score.
+
+.SH SEE ALSO
+.B crf-train(1)
+,
+.B crf-annotate(1)
+, 
+.B crf-train(5)
+,
+.B crf-annotate(5)
+,
+.B crf-conf(5)
+
+.SH BUGS
+The outputters are currently not general enough. 
+Not all combinations of input format, output format and evaluation mode are possible.
+The model order could be inferred from the model file.
+
+.SH AUTHOR
+Thomas Hanneforth, University of Potsdam (Thomas.Hanneforth@uni-potsdam.de)

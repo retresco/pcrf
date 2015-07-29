@@ -1,0 +1,253 @@
+.TH crf-conf 5 "24 July 2015" "1.0" "crf-conf file formats man page"
+
+.SH NAME
+.B crf-conf file format
+
+.SH DESCRIPTION
+Both
+.B crf-annotate(1)
+and
+.B crf-apply(1)
+are controlled by a configuration (text) file which states 
+which features are to be added to the sequences in the input data. 
+Each entry has the form KEY=VALUE. 
+The following sections describe the meaning of these keys.
+
+.SH KEYS AND VALUES
+This section explains the keys and possible values usable in a PCRF
+configuration file. 
+Each entry has the form \fBKEY=VALUE\fR. 
+After the key, a type annotation states the possible values for the key.
+Boolean values (<bool>) are the values 
+\fIyes\fR, \fIno\fR, \fItrue\fR and \fIfalse\fR.
+
+.TP 
+.BR Columns " : " <string>
+This applies only to column (tab-separated) data.
+The value of \fBColumns\fR is a string describing the column layout of the input data.
+Currently, three column names are supported: Token, Tag and Label.
+Column names are separated by |. 
+For example, Columns=Token|Label|Tag says that the tokens can be found 
+in the first column, the output labels in the second, and so on.
+
+.TP 
+.BR DefaultLabel " : " <string>
+Specifies the default label (the default is "OTHER")
+
+.TP 
+.BR Patterns " : " <filename>
+<filename> is the name of a binary file containing a DWAG
+(directed acyclic word graph) with multi-token sequences (MTS) and
+corresponding attribute value. 
+If such a MTS is found as a subsequence of an input sequence,
+its corresponding attribute value will be attributed to the tokens 
+in the input sequence.
+See create-dawg(1) for details on how to create DWAG.
+
+.TP 
+.BR RightContextFilename " : " <filename>
+See create-dawg(1) for details on how to create DWAG.
+
+.TP 
+.BR LeftContextFilename " : " <filename>
+See create-dawg(1) for details on how to create DWAG.
+
+.TP 
+.BR RegexFilename " : " <filename>
+<filename> is the name of a two-column text file. 
+The first column is an arbitrary attribute value,
+while the second column contains a regular expression
+(in C++ regex syntax). 
+If one of the regexes matches an input token, 
+the corresponding attribute value is attributed to it.
+
+.TP 
+.BR OutputToken " : " <bool>
+If set to true, the output sequence produced by
+\fBcrf-annotate\fR / \fBcrf-apply\fR
+will also contain the input token.
+The same effect can be achieved with the
+.BR -t
+option of \fBcrf-annotate\fR / \fBcrf-apply\fR.
+See \fBcrf-annotate(1)\fR and \fBcrf-apply(3)\fR.
+
+
+.TP 
+.BR RunningText " : " <bool>
+If set to true, \fBcrf-annotate\fR / \fBcrf-apply\fR
+assume that is input is UTF-8 encoded running text. 
+\fBcrf-annotate\fR / \fBcrf-apply\fR then extracts sequences 
+from that input file by using an heuristic sentence segmenter (for English). 
+If not set/set to false, 
+\fBcrf-annotate\fR / \fBcrf-apply\fR
+assume tab-separated input data.
+The same effect can be achieved with the
+.BR --running-text
+option of \fBcrf-annotate\fR / \fBcrf-apply\fR.
+See \fBcrf-annotate(1)\fR and \fBcrf-apply(3)\fR.
+
+.TP 
+.BR AnnotationScheme " : " {BIO,BILOU}
+Annotation schemes add a state mechanism to the output labels. 
+B stands for the beginning of some annotated sequence, 
+I means: within a sequence, 
+L means: last element of the sequence and 
+U stands for unit-length sequences. 
+O stands for: outside a sequence.
+The output label will be suffixed with a state marker 
+reflecting the position followed by an underscore.
+For example: a output label sequence for an named-entity
+recognition system
+\fIPERSON PERSON PERSON\fR becomes \fIPERSON_B PERSON_I PERSON_L\fR.
+Note that this currently applies ...
+The default is ??
+
+.TP 
+.BR HeadWord " : " <bool>
+If set to true, the current token t will be added as w[0]=t.
+
+.TP 
+.BR HeadWordLowercased
+If set to true, the current token t will be added as lcw[0]=t',
+where t' will be t in lowercase.
+
+.TP 
+.BR AllPrevWords " : " <bool>
+If set to true, all n previous input tokens will be added with attribute keys
+\fIw[-1] ... w[-n]\fR. Note that n is currently hard-coded with value 2.
+This will change in the next version. 
+
+.TP 
+.BR AllNextWords " : " <bool>
+If set to true, all n next input tokens will be added with attribute keys
+\fIw[1] ... w[n]\fR. Note that n is currently hard-coded with value 2.
+This will change in the next version. 
+
+.TP 
+.BR AllWords " : " <bool>
+If set to true, 
+
+.TP 
+.BR AllPrefixes " : " <bool>
+If set to true, all possible prefixes up to a length of k are added as attributes
+with the key \fIprefk\fR. 
+Note that k is currently hard-coded with value 2.
+This will change in the next version. 
+
+.TP 
+.BR AllSuffixes " : " <bool>
+If set to true, all possible suffixes up to a length of k are added as attributes
+with the key \fIsuffk\fR. 
+Note that \fIk\fR is currently hard-coded with value 2.
+This will change in the next version. 
+
+.TP 
+.BR AllPosTags " : " <bool>
+
+.TP 
+.BR AllLemmas " : " <bool>
+
+.TP 
+.BR AllDelim " : " <bool>
+If set to true, attributes <BOS> and <EOS> will be annotated to the first
+and the last token of a sequence, resp.
+
+.TP 
+.BR AllW{X}grams " : " <bool>
+{X} here stands for Bi, Tri, Tetra, Penta, Hexa, Hepta, Octa, Nona or Deca.
+If set, word N-grams features (for N in {2,...,10}) will be added 
+to each input token:
+w[0..(N-1)] denotes the forward-looking N-gram feature, and
+w[(N-1)..0] denotes the backward-looking N-gram feature.
+If InnerWordNgrams=true, then also all possible start-end N-gram features
+involving the current token will be added.
+ 
+.TP 
+.BR InnerWordNgrams " : " <bool>
+If InnerWordNgrams=true, then also all possible start-end N-gram features
+involving the current token will be added.
+See AllW{X}grams.
+
+.TP 
+.BR AllWNgrams " : " <bool>
+If set to true, all AllW{X}grams attributes will be added to the input sequence.
+
+.TP 
+.BR AllPOSBigrams " : " <bool>
+
+.TP 
+.BR AllPOSTrigrams " : " <bool>
+
+.TP 
+.BR AllPOSgrams " : " <bool>
+
+.TP 
+.BR AllTokenTypes " : " <bool>
+
+.TP 
+.BR AllListFeatures " : " <bool>
+
+.TP 
+.BR AllPatterns " : " <bool>
+
+.TP 
+.BR AllContextClues " : " <bool>
+
+.TP 
+.BR AllListFeatures " : " <bool>
+
+.TP 
+.BR AllRegexes " : " <bool>
+If set to true, all regexes specified with the filename under the key
+RegexFilename will be evaluated against the current input token 
+and added as an attribute in case of success.
+
+.TP 
+
+.BR AllCharNgrams " : " <bool>
+
+.TP 
+.BR LeftContextContains " : " <bool>
+
+.TP 
+.BR RightContextContains " : " <bool>
+
+.TP 
+.BR AllContextContains " : " <bool>
+
+.TP 
+.BR AllInitUpper2grams " : " <bool>
+
+.TP 
+.BR AllInitUpper3grams " : " <bool>
+
+.TP 
+.BR AllInitUpperGrams " : " <bool>
+
+.TP 
+.BR AllShapes " : " <bool>
+
+.TP 
+.BR WordPOS " : " <bool>
+
+.TP 
+.BR TokenClass " : " <bool>
+If set to true, an attribute with key \fITokClass\fR will be attributed to the
+current input token.
+The value is the class information returned by the tokenizer, e.g.
+WORD, NUMBER, ABBREV, DATE, PUNCT, URL, etc.
+
+.TP 
+.BR VCPattern " : " <bool>
+If set to true, ...
+
+
+.SH SEE ALSO
+.B crf-annotate(1)
+,
+.B crf-apply(1)
+
+
+.SH AUTHOR
+Thomas Hanneforth, University of Potsdam (Thomas.Hanneforth@uni-potsdam.de)
+
