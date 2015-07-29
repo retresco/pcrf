@@ -22,32 +22,34 @@ template<unsigned ORDER>
 class AveragedPerceptronCRFTrainer : public CRFTrainer<ORDER>
 {
 public:
+  /// Defines a state in a higher-order CRF
   typedef typename SimpleLinearCRFModel<ORDER>::CRFHigherOrderState  CRFHigherOrderState;
 
 private:
-  /// ParamUpdater: updater function object for model parameters
-  /// Updates both model parameter and model parameter sum
-  /// The idea of the averaged parameter updater is the following:
-  /// The perceptron algorithm is a sequential one, that is, the parameters are updated each time
-  /// after processing a training pair based on the difference between the output sequence
-  /// in the corpus and the one predicted by the model on the basis of the current parameter values.
-  /// After that update, the whole parameter vector is added to a vector holding the parameter sum.
-  /// This sum vector is responsible for the averaging step (some kind of smoothing step) : 
-  /// parameters that are tied to output labels that stay correct during most of the training time 
-  /// are downweighted less than parameters which cause wrong output labels most of the training time.
-  /// Now, adding vectors of several hundred thousand or even million parameters after each prediction
-  /// adds a big constant to the algorithm's time complexity. This is even more annoying since a single
-  /// training pair affects only a small fraction of the parameters, the others stay the same.
-  /// We solve that problem here by using two auxiliary vectors keeping track of the parameter updates.
-  /// One vector (last_param_update) holds the time step when a given parameter was updated last,
-  /// the other (last_model_params) holds the (non-averaged) value of that parameter at that time step.
-  /// When the parameter is updated the next time (maybe several time steps later), all the parameter
-  /// summations which were omitted in the mean time are now applied (based on the value in 
-  /// last_model_params).
-  /// In effect, repeated summations are replaced by rare multiplications.
-  /// A last update of all parameters after training ensures that all pending summations are carried out.
-  struct ParamUpdater 
-  { 
+  /**
+    @brief ParamUpdater: updater function object for model parameters
+      Updates both model parameter and model parameter sum
+      The idea of the averaged parameter updater is the following:
+      The perceptron algorithm is a sequential one, that is, the parameters are updated each time
+      after processing a training pair based on the difference between the output sequence
+      in the corpus and the one predicted by the model on the basis of the current parameter values.
+      After that update, the whole parameter vector is added to a vector holding the parameter sum.
+      This sum vector is responsible for the averaging step (some kind of smoothing step) : 
+      parameters that are tied to output labels that stay correct during most of the training time 
+      are downweighted less than parameters which cause wrong output labels most of the training time.
+      Now, adding vectors of several hundred thousand or even million parameters after each prediction
+      adds a big constant to the algorithm's time complexity. This is even more annoying since a single
+      training pair affects only a small fraction of the parameters, the others stay the same.
+      We solve that problem here by using two auxiliary vectors keeping track of the parameter updates.
+      One vector (last_param_update) holds the time step when a given parameter was updated last,
+      the other (last_model_params) holds the (non-averaged) value of that parameter at that time step.
+      When the parameter is updated the next time (maybe several time steps later), all the parameter
+      summations which were omitted in the mean time are now applied (based on the value in 
+      last_model_params).
+      In effect, repeated summations are replaced by rare multiplications.
+      A last update of all parameters after training ensures that all pending summations are carried out.
+    */
+    struct ParamUpdater { 
     ParamUpdater(ParameterVector& params, ParameterVector& summed_params, 
                  ParameterVector& last_params, std::vector<unsigned>& last_update) 
     : model_params(params), summed_model_params(summed_params),
@@ -58,7 +60,6 @@ private:
     inline void operator()(ParameterIndex p, unsigned u, Weight w) const 
     { 
       //if (p == ParameterIndex(-1)) return;
-
       // Add the weight to parameter p
       model_params[p] += w;
       if (u == last_param_update[p]) {
@@ -100,11 +101,13 @@ public:
     crf_decoder.resize_matrices(training_corpus.max_input_length());
   }
 
+  /// Perform the perceptron training with a given number of iterations
   void train_by_number_of_iterations(unsigned num_iterations)
   {
     train(num_iterations,0.0,false);
   }
 
+  /// Perform the perceptron training with a threshold argument
   void train_by_threshold(float threshold)
   {
     train(10000,threshold,true);
@@ -349,8 +352,8 @@ private:
   }
 
 private: // Member variables
-  CRFTranslatedTrainingCorpus&    translated_training_corpus;
-  CRFDecoder<ORDER>               crf_decoder;
+  CRFTranslatedTrainingCorpus&    translated_training_corpus; ///< The training corpus
+  CRFDecoder<ORDER>               crf_decoder;                ///< The decoder for finding best output sequences
 }; // AveragedPerceptronCRFTrainer
 
 #endif

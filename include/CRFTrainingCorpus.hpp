@@ -14,13 +14,18 @@
 #include "SimpleLinearCRFModel.hpp"
 
 
-/// CRFTranslatedTrainingCorpus represents a translated corpus
+/** 
+  @brief CRFTranslatedTrainingCorpus represents a translated corpus, that is, a sequence
+  of n pairs (x,y), where x is the input sequence consisting out of the input tokens
+  and their translated attributes, and y is translated label sequence.
+*/
 class CRFTranslatedTrainingCorpus
 {
 private:
   typedef boost::unordered_map<unsigned,unsigned>                 FeatureCountMap;
 
 public:
+  /// Creates an instance of a translated corpus and reserves room for n training pairs
   CRFTranslatedTrainingCorpus(unsigned n=0) 
   : max_len(0), tok_count(0), attr_counter(0), label_counter(0), token_type_counter(0)
   {
@@ -48,24 +53,30 @@ public:
     max_len = tok_count = attr_counter = label_counter = 0;
   }
 
+  /// Returns the corpus size
   unsigned size() const { return training_pairs.size(); }
 
+  /// Returns the size of the longest input sequence of a training pair
   unsigned max_input_length() const { return max_len; }
 
+  /// Return the ID of the dummy label BOS
   LabelID get_bos_label() const { return 0; }
 
+  /// Returns a const reference to the training pair at position index
   inline const TranslatedCRFTrainingPair& operator[](unsigned index) const
   {
     static TranslatedCRFTrainingPair invalid;
     return (index < size()) ? training_pairs[training_pairs_indices[index]] : invalid;
   }
 
+  /// Returns a non-const reference to the training pair at position index
   inline TranslatedCRFTrainingPair& operator[](unsigned index)
   {
     static TranslatedCRFTrainingPair invalid;
     return (index < size()) ? training_pairs[training_pairs_indices[index]] : invalid;
   }
 
+  /// Append an untranslated training pair tp to the corpus; tp will be translated
   void add(const CRFTrainingPair& tp)
   {
     if (tp.first.size() == tp.second.size()) {
@@ -90,6 +101,7 @@ public:
     }
   }
 
+  /// Append an translated training pair tp to the corpus  
   void add(const TranslatedCRFTrainingPair& tp) 
   {
     if (tp.x.size() == tp.y.size()) {
@@ -103,6 +115,7 @@ public:
     }
   }
 
+  /// @note Experimental
   unsigned prune(unsigned feature_count_threshold)
   {
     AttributesPruner attr_pruner(feature_counts,feature_count_threshold);
@@ -120,10 +133,18 @@ public:
     return pruned_attributes;
   }
 
-  unsigned token_count() const { return tok_count; }
+  /// Return then number of input tokens in the corpus
+  unsigned token_count()      const { return tok_count; }
+  /// Return then number of different attributes in the corpus
   unsigned attributes_count() const { return attributes_mapper.size(); }
-  unsigned labels_count() const { return labels_mapper.size(); }
+  /// Return then number of different labels in the corpus
+  unsigned labels_count()     const { return labels_mapper.size(); }
 
+  /** 
+    @brief  Reduce the space requirements of the corpus.
+    @note   may not be feasible since during compression two copies of the corpus
+            will be hold within memory.
+  */
   void compress()
   {
     //std::vector<TranslatedCRFTrainingPair>(training_pairs).swap(training_pairs);
@@ -132,16 +153,19 @@ public:
     labels_mapper.compress();
   }
 
+  /// Randomly permute the training pairs
   void random_shuffle()
   {
     std::random_shuffle(training_pairs_indices.begin(), training_pairs_indices.end());
   }
 
+  /// Return a reference to the attributes mapper (mapping attributes strings to attribute IDs)
   const StringUnsignedMapper& get_attributes_mapper() const 
   {
     return attributes_mapper;
   }
 
+  /// Return a reference to the labels mapper (mapping label strings to label IDs)
   const StringUnsignedMapper& get_labels_mapper() const 
   {
     return labels_mapper;

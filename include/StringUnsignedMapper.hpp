@@ -5,7 +5,9 @@
 #include <string>
 #include <vector>
 
-
+/**
+  @brief Utility class for mapping strings to unique unsigned integers.
+*/
 class StringUnsignedMapper
 {
 private:
@@ -17,16 +19,23 @@ public:
   typedef StringToUnsignedMap::const_iterator         const_iterator;
 
 public:
+  /// Creates a new instance
   StringUnsignedMapper() : total_string_len(0)
   {
     id_string_map.reserve(1000);
   }
 
+  /// Sets the expected size of strings to n
   void set_expected_size(size_t n)
   {
     id_string_map.resize(n);
   }
 
+  /**
+    @brief adds a pair (s,id) to the mapper
+    @param s the strings
+    @param id its ID
+  */
   bool add_pair(const std::string& s, unsigned id)
   {
     std::pair<StringToUnsignedMap::iterator,bool> p = string_id_map.insert(std::make_pair(s,id));
@@ -41,33 +50,39 @@ public:
     else return false;
   }
 
+  /// Returns the unsigned ID for a given string 's'
   inline unsigned get_id(const std::string& s) const
   {
     StringToUnsignedMap::const_iterator f = string_id_map.find(s);
     return (f != string_id_map.end()) ? f->second : unsigned(-1);
   }
 
+  /// Returns the string for a given ID 'id'
   const std::string& get_string(unsigned id) const
   {
     static std::string no_string("");
     return (id < id_string_map.size()) ? id_string_map[id]->first : no_string;
   }
 
+  /// Returns the number of (string,id) pairs in the mapper
   unsigned size() const
   {
     return string_id_map.size();
   }
 
+  /// Returns the total length of all strings in the mapper
   unsigned total_string_length() const
   {
     return total_string_len;
   }
 
+  /// Tries for free some memory
   void compress()
   {
     UnsignedToStringIndexMap(id_string_map).swap(id_string_map);
   }
 
+  /// Clears the mapper
   void clear()
   {
     string_id_map.clear();
@@ -75,16 +90,19 @@ public:
     total_string_len = 0;
   }
 
+  /// Returns the start of the mapper for iteration
   const_iterator begin() const
   {
     return string_id_map.begin();
   }
 
+  /// Returns the end of the mapper for iteration
   const_iterator end() const
   {
     return string_id_map.end();
   }
 
+  /// Prints the mapper in a two-column style on 'out'
   void print(std::ostream& out, std::string pref, std::string sep) const
   {
     for (unsigned i = 0; i < string_id_map.size(); ++i) {
@@ -105,6 +123,7 @@ public:
 
     in.read((char*)&total_string_len,sizeof(total_string_len));
 
+    // Reserve memory to read in the string vector
     char* buf = new (std::nothrow) char[total_string_len];
     if (buf == 0) {
       std::cerr << "Error (StringUnsignedMapper::read()): Unable to allocate string buffer\n";

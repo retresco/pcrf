@@ -3,7 +3,6 @@
 
 #include <string>
 #include <vector>
-#include <map>
 #include <iostream>
 #include <cmath>
 #include <limits>
@@ -15,20 +14,31 @@
 
 #define MINIMUM_WEIGHT   Weight(-std::numeric_limits<Weight>::max())
 
-/// CRFDecoder implements a decoder for first-order and higher-order linear CRFs
+/** 
+  @brief  CRFDecoder implements a decoder for first-order and higher-order linear CRFs.
+          The purpose of a decoder is inferring the best output sequence of a given input
+          sequence and its attributes on the basis of the parameters of a given model.
+          CRFDecoder is used within CRFApplier as well as in some training algorithms like
+          AveragedPerceptronCRFTrainer.
+*/
 template<unsigned ORDER>
 class CRFDecoder
 {
 public:
   /// Creates an instance of the decoder based on the given CRF model 'm'
-  CRFDecoder(const SimpleLinearCRFModel<ORDER>& m) : crf_model(m) 
-  { }
+  CRFDecoder(const SimpleLinearCRFModel<ORDER>& m) : crf_model(m) {}
 
   /// Computes argmax output p(output|input)
   inline Weight best_sequence(const TranslatedCRFInputSequence& input, LabelIDSequence& output)
   {
     if (ORDER == 1) return first_order_best_sequence(input,output);
     else return higher_order_best_sequence(input,output);
+  }
+
+  /// Computes argmax_k output p(output|input)
+  inline Weight k_best_sequences(const TranslatedCRFInputSequence& input, LabelIDSequence& output)
+  {
+    return first_order_best_sequence(input,output);
   }
 
   /// Resizes trellis, backpointer matrix and all aux. matrixes to the specified sizes

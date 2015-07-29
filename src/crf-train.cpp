@@ -10,6 +10,15 @@
 // TODO:
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+  \page CRFCommands Commands-line tools
+  \section CRFTrain crf-train
+*/
+
+/// If the training data contains more than LABEL_WARNING_THRESHOLD output labels, this warning
+/// is issued
+#define LABEL_WARNING_THRESHOLD   1000
+
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -36,18 +45,21 @@ struct CRFTrainingHyperParams
 
 
 // Prototypes
-void parse_options(int argc, char* argv[], std::string&, std::string&, CRFTrainingHyperParams&);
+void parse_options(int argc, char* argv[], std::string&, std::string&, CRFTrainingHyperParams&, bool&);
 void usage();
-template<unsigned O> void train_with_perceptron(CRFTranslatedTrainingCorpus&, const CRFTrainingHyperParams&, const std::string&);
-template<unsigned O> void write_model(const SimpleLinearCRFModel<O>&, std::string, std::string);
+template<unsigned O> 
+  void train_with_perceptron(CRFTranslatedTrainingCorpus&, const CRFTrainingHyperParams&, const std::string&, bool);
+template<unsigned O> 
+  void write_model(const SimpleLinearCRFModel<O>&, std::string, bool);
 
 
 int main(int argc, char* argv[])
 {
   CRFTrainingHyperParams hyper_params;
   std::string model_file, corpus_file;
+  bool verbose = false;
 
-  parse_options(argc, argv, model_file, corpus_file, hyper_params);
+  parse_options(argc, argv, model_file, corpus_file, hyper_params, verbose);
 
   if (hyper_params.order > 3) {
     std::cerr << "crf-train: Error: Currently, only the orders 1, 2 or 3 are supported" << std::endl;
@@ -70,14 +82,14 @@ int main(int argc, char* argv[])
             << corpus.token_count() << " tokens, " 
             << corpus.size() << " sequences]\n";
 
-  if (corpus.labels_count() > 1000) {
+  if (corpus.labels_count() > LABEL_WARNING_THRESHOLD) {
     std::cerr << "crf-train: Warning: The number of labels is unusually high. You may experience memory problems\n";
   }
 
   if (hyper_params.method == crfTrainAveragedPerceptron) {
-    if (hyper_params.order == 1)      train_with_perceptron<1>(corpus,hyper_params,model_file);
-    else if (hyper_params.order == 2) train_with_perceptron<2>(corpus,hyper_params,model_file);
-    else if (hyper_params.order == 3) train_with_perceptron<3>(corpus,hyper_params,model_file);
+    if (hyper_params.order == 1)      train_with_perceptron<1>(corpus,hyper_params,model_file,verbose);
+    else if (hyper_params.order == 2) train_with_perceptron<2>(corpus,hyper_params,model_file,verbose);
+    else if (hyper_params.order == 3) train_with_perceptron<3>(corpus,hyper_params,model_file,verbose);
   }
   else if (hyper_params.method == crfTrainSGDL2) {
   }
@@ -93,7 +105,8 @@ int main(int argc, char* argv[])
 template<unsigned ORDER>
 void train_with_perceptron(CRFTranslatedTrainingCorpus& corpus, 
                            const CRFTrainingHyperParams& hyper_params,
-                           const std::string& model_file)
+                           const std::string& model_file,
+                           bool verbose)
 {
   std::cerr << "crf-train: training model with order=" << ORDER << std::endl;
   time_t t0 = clock();
@@ -101,7 +114,7 @@ void train_with_perceptron(CRFTranslatedTrainingCorpus& corpus,
   perceptron_trainer.train_by_number_of_iterations(hyper_params.num_iterations);
   std::cerr << "Training time: " << (float(clock()-t0)/CLOCKS_PER_SEC) << "s\n";
   
-  write_model(perceptron_trainer.get_model(),model_file,model_file+".text_model");
+  write_model(perceptron_trainer.get_model(),model_file,verbose);
   //std::ofstream dot("model.dot");
   //perceptron_trainer.get_model().draw(dot);
   
@@ -110,17 +123,23 @@ void train_with_perceptron(CRFTranslatedTrainingCorpus& corpus,
 
 
 template<unsigned ORDER>
-void write_model(const SimpleLinearCRFModel<ORDER>& crf_model, std::string binary_file_name, std::string text_file_name)
+void write_model(const SimpleLinearCRFModel<ORDER>& crf_model, 
+                 std::string binary_file_name, bool verbose)
 {
   std::cerr << "Writing binary model '" << binary_file_name << "'\n";
   std::ofstream model_out(binary_file_name.c_str(), std::ios::binary);
   crf_model.write_model(model_out);
 
-  //std::ofstream text_model_out(text_file_name.c_str());
-  //text_model_out << crf_model;
+  if (verbose) {
+    std::string text_file_name = binary_file_name + ".text_model";
+    std::ofstream text_model_out(text_file_name.c_str());
+    text_model_out << crf_model;
+  }
 }
 
-void parse_options(int argc, char* argv[], std::string& model_file, std::string& corpus_file, CRFTrainingHyperParams& hyper_params)
+void parse_options(int argc, char* argv[], std::string& model_file, 
+                   std::string& corpus_file, CRFTrainingHyperParams& hyper_params,
+                   bool& verbose)
 {
   typedef TCLAP::ValueArg<std::string>  StringValueArg;
   typedef TCLAP::SwitchArg              BoolArg;
@@ -136,8 +155,11 @@ void parse_options(int argc, char* argv[], std::string& model_file, std::string&
     StringValueArg algorithm_arg("a","algorithm","Training algorithm",false,"","{perceptron}");
     IntValueArg num_iterations_arg("n","num-iterations","Number of iterations",false,100,"positive integer");
     IntValueArg order_arg("o","order","Model order",false,1,"1,2 or 3");
+    BoolArg verbose_arg("v","verbose","Output textual model",false);
+
     TCLAP::UnlabeledMultiArg<std::string> input_files_arg("input","input files",true,"input-filename");
 
+    cmd.add(verbose_arg);
     cmd.add(model_file_arg);
     cmd.add(num_iterations_arg);
     cmd.add(order_arg);
@@ -146,6 +168,7 @@ void parse_options(int argc, char* argv[], std::string& model_file, std::string&
     cmd.parse(argc,argv);
 
     model_file = model_file_arg.getValue();
+    verbose = verbose_arg.getValue();
     hyper_params.method = crfTrainAveragedPerceptron;
     hyper_params.num_iterations = num_iterations_arg.getValue();
     hyper_params.order = order_arg.getValue();

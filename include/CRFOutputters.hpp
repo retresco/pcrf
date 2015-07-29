@@ -1,5 +1,5 @@
-#ifndef __NER_OUTPUTTERS_HPP__
-#define __NER_OUTPUTTERS_HPP__
+#ifndef __CRF_OUTPUTTERS_HPP__
+#define __CRF_OUTPUTTERS_HPP__
 
 #include <iostream>
 #include <iterator>
@@ -10,37 +10,23 @@
 #include "TokenWithTag.hpp"
 
 /// Base class for outputter function objects
-struct NEROutputterBase
+struct CRFOutputterBase
 {
-  /// Actions which happens before anything is outputted
   virtual void prolog() {}
-  /// Actions which happens after everything is outputted
   virtual void epilog() {}
-  /// Application mode: gets a labeled sequence and the information, whether it is the last one
+  /// Application mode
   virtual void operator()(const TokenWithTagSequence& sentence, bool last=false) {}
-  /// Evalulation mode: gets a labeled sequence and the information, whether it is the last one
   virtual void operator()(const TokenWithTagSequence& sentence, const LabelSequence& inferred_labels, bool last=false) {}
-  /// Reset the state of the outputter to an initial one
-  virtual void reset() {}
-}; // NEROutputterBase
+}; // CRFOutputterBase
 
-/**
-  @brief  NEROneWordPerLineOutputter outputs tab-separated data in the following layout:
-          <tt>OUTPUTLABEL INPUTTOKEN TOKENIZERCLASS POSITION</tt>\n
-          where
-          - <tt>TOKENIZERCLASS</tt> is an element in <tt>{ WORD, NUMBER, PUNCT, DATE, HTML-Entity, 
-            L_QUOTE, R_QUOTE, GENITIVE_SUFFIX, DASH, L_BRACKET, R_BRACKET, XML/HTML}</tt>
-          - <tt>POSITION is a pair <tt>(OFFSET,LEN)</tt> where <tt>OFFSET</tt> is the byte offset of the token
-            and <tt>LEN</tt> its byte length.
-*/
-struct NEROneWordPerLineOutputter : public NEROutputterBase
+
+/// Output for one word plus annotation per line on a stream
+struct NEROneWordPerLineOutputter : public CRFOutputterBase
 {
-  /// Constructor: takes a reference to the output stream
   NEROneWordPerLineOutputter(std::ostream& o) : out(o) {}
 
   void prolog() {}
   void epilog() {}
-  void reset()  {}
 
   /// Application mode
   void operator()(const TokenWithTagSequence& sentence, bool last=false)
@@ -63,17 +49,8 @@ struct NEROneWordPerLineOutputter : public NEROutputterBase
 }; // NEROneWordPerLineOutputter
 
 
-/**
-  @brief  Output results as structured JSON output 
-          JSONOutputter outputs results in JSON syntax on a string stream (see http://json.org). 
-          Currently, JSON output is only supported for named entity recognition tasks.
-          The main JSON key is here "entities", whose values is a list of named entity 
-          sub structures with the keys "surface", "entity_type", "start" and "end".
-          The keys "start" and "end" are numbers denoting a half open interval where "start"
-          is the byte offset where the named entity starts and "end" is the byte offset
-          of the first byte following the named entity.
-*/
-struct JSONOutputter : public NEROutputterBase
+/// Output results as structured JSON output on a string stream
+struct JSONOutputter : public CRFOutputterBase
 {
   JSONOutputter(std::ostream& o, bool pp=true) 
   : out(o), pretty_print(pp), entity_outputted(false) {}
@@ -92,11 +69,6 @@ struct JSONOutputter : public NEROutputterBase
       out << std::endl << "  ]" << std::endl << "}" << std::endl;
     else 
       out << "]}";
-  }
-  
-  void reset()
-  {
-    entity_outputted = false;
   }
 
   /// Application mode
@@ -200,7 +172,7 @@ private:
 
 /// Add XML-style annotation to running text
 /// Note: this is a bit too much tailored towards NE recognition 
-struct NERAnnotationOutputter : public NEROutputterBase
+struct NERAnnotationOutputter : public CRFOutputterBase
 {
   NERAnnotationOutputter(std::ostream& o) : out(o) {}
 
@@ -267,18 +239,14 @@ struct NERAnnotationOutputter : public NEROutputterBase
 }; // NERAnnotationOutputter
 
 
-/** 
-  @brief  MorphOutputter is useful for outputting morphology results. The labels of an
-          output sequence are separated by a space; after a sequence follows a line break.
-*/
-struct MorphOutputter : public NEROutputterBase
+/// Output for one word plus annotation per line on a stream
+struct MorphOutputter : public CRFOutputterBase
 {
   MorphOutputter(std::ostream& o) : out(o) {}
 
   void prolog() {}
   void epilog() {}
-  void reset()  {}
-    
+
   /// Application mode
   void operator()(const TokenWithTagSequence& sentence, bool last=false)
   {
@@ -303,6 +271,5 @@ struct MorphOutputter : public NEROutputterBase
 
   std::ostream& out;
 }; // MorphOutputter
-
 
 #endif

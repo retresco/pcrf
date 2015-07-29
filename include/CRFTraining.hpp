@@ -12,7 +12,10 @@
 
 //#define HOCRF_ADD_LOWER_ORDER_TRANSITIONS
 
-/// CRFTrainer: Base class of all CRF training algorithms
+/** 
+  @brief CRFTrainer: Base class of all CRF training algorithms
+  @param ORDER is the order of the trained model
+*/
 template<unsigned ORDER>
 class CRFTrainer
 {
@@ -20,9 +23,16 @@ public:
   typedef typename SimpleLinearCRFModel<ORDER>::CRFHigherOrderState  CRFHigherOrderState;
 
 public:
+  /// Returns a reference to the trained model
   const SimpleLinearCRFModel<ORDER>& get_model() const { return crf_model; }
 
 protected:
+  /**
+    @brief Constructor
+    @param l_map a mapper object mapping labels to label IDs, as created during adding translated
+           training pairs to a corpus
+    @param a_map a mapper object mapping attributes to attribute IDs
+  */
   CRFTrainer(const StringUnsignedMapper& l_map, const StringUnsignedMapper& a_map, unsigned ft=5)
   : crf_model(l_map,a_map), feature_threshold(ft)
   {}
@@ -148,8 +158,8 @@ private:
   }
 
 protected:
-  SimpleLinearCRFModel<ORDER> crf_model;
-  unsigned feature_threshold;
+  SimpleLinearCRFModel<ORDER> crf_model;  ///< Holds the model after training
+  unsigned feature_threshold;             ///<
 }; // CRFTrainer
 
 #endif

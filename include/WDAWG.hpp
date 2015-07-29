@@ -64,7 +64,7 @@ class WeightedDirectedAcyclicWordGraph
       new_state();
     }
 
-      /// Construct a weighted DAWG from a sorted list
+    /// Construct a weighted DAWG from a sorted list
     /// Precondition: entries in 'entries' must be sorted (after the same criterion as SymbolStateMap)
     WeightedDirectedAcyclicWordGraph(const EntryVector& entries)
     : state_register(180811,StateHash(delta,final_states),StateEquiv(delta,final_states))

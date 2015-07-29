@@ -169,6 +169,10 @@ private: // Member variables
 
 
 // Include the re2c generated tokenizing function
-#include "next_token.cpp"
+#ifdef PCRF_UTF8_SUPPORT
+# include "next_utf8_token.cpp"
+#else
+# include "next_token.cpp"
+#endif
 
 #endif // __TOKENIZER_HPP__

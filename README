@@ -22,7 +22,7 @@ sudo make -f Makefile.linux install
 Executables
 --------------------------------------------------------------------------------
 make will create and install the following three binaries:
-* ner-annotate:	a config-file controlled annotation program for corpus files
+* crf-annotate:	a config-file controlled annotation program for corpus files
 		and running text
 * crf-train:	a training program which creates binary CRF models
 * crf-apply:	a program which applies and evaluates CRF models on corpus

@@ -2,11 +2,59 @@
 // SimpleLinearCRFModel.hpp
 // Definition of a class for representing first or higher-order Conditional Random Fields
 // Thomas Hanneforth, Universität Potsdam
-// March 2015
+// 2014-2015
 // TODO: 
 //  * Text/binary output of hoCRFs
 //  * checksums for read_model()
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+  \mainpage PCRF -- Potsdam CRF Library and tools
+  \author Thomas Hanneforth
+  \date 2014-2015
+  
+  \section Overview
+  PCRF is an efficient implementation for linear conditional random fields,
+  a framework for supervised learning of sequence labelings from annotated data.
+  PCRF also supports higher-order linear CRFs  
+  
+  \section Infrastructure Available types of models and training algorithm
+  Currently, the following training algorithms are available:
+  - Averaged perceptron (Collins, 2002), a simple and efficient training algorithm based on
+    decoding.
+    
+  \section Classes Main classes of the library
+  - SimpleLinearCRFModel is the main class for representation linear CRFs of different orders.
+    The class represents a CRF model in an efficient way and provides access its features, labels
+    and parameters.
+  - CRFDecoder implements a Viterbi decoder for input sequences based on a model of type
+    SimpleLinearCRFModel
+  - AveragedPerceptronCRFTrainer implements a fast supervised training algorithm.
+  - CRFFeatureExtractor provides user-controlled feature annotation for input sequences.
+  - CRFConfiguration holds the current configuration (that is, selected attributes, annotation style, etc.)
+    for instances of CRFFeatureExtractor and CRFApplier.
+  - CRFApplier combines model, annotation and configuration and provides an easily to use user interface.
+  
+  \section Tools Available tools
+  PCRF also provides three command-line programs based on the library:
+  - <b>crf-annotate</b> adds features to input sequences (either column data or running text)
+    based on a configuration file. The output of crf-annotate is a tab-separated text
+    file where each line contains an input token, its output label and the attributes 
+    annotated for the input token.
+  - <b>crf-train</b> takes the input of crf-annotate and trains a CRF model from it. This model
+    is stored as a binary file.
+  - <b>crf-apply</b> takes the model file created by crf-train and applies it to input text data
+    (again, either column data or running text), extracts the sequences and labels them. 
+    crf-apply also has an evaluation mode where the model can be evaluated against some gold
+    standard.
+    
+  \section Installation
+  Change directory to <code>pcrf</code> and type <code>make -f Makefile.linux install</code>. 
+  This installs the three programs mentioned above under <code>/usr/local/bin</code>.
+  You need the boost C++ libraries to be installed (<code>boost.org</code>).
+  
+  \section Tutorial
+*/
 
 #ifndef __SIMPLE_LINEAR_CRF_MODEL_HPP__
 #define __SIMPLE_LINEAR_CRF_MODEL_HPP__
@@ -31,21 +79,21 @@
 #include "StringUnsignedMapper.hpp"
 
 
-#define MODEL_HEADER_ID   "LCRF Binary Model File version 1.0"
+#define MODEL_HEADER_ID   "PCRF Binary Model File version 1.0"
 
 #define BOS_LABEL         0
 
 /// Metadata of a simple linear CRF model
 struct SimpleLinearCRFModelMetaData
 {
-  unsigned order;                         ///<
-  unsigned num_labels;                    ///<
-  unsigned num_states;                    ///<
-  unsigned num_transitions;               ///<
-  unsigned num_attributes;                ///<
-  unsigned num_features;                  ///<
-  unsigned num_parameters;                ///<
-  unsigned num_non_null_parameters;       ///<
+  unsigned order;                         ///< The order
+  unsigned num_labels;                    ///< Number of labels
+  unsigned num_states;                    ///< Number of states
+  unsigned num_transitions;               ///< Number of transitions
+  unsigned num_attributes;                ///< Number of attributes (distinct strings)
+  unsigned num_features;                  ///< Number of distinct (attribute,label) pairs
+  unsigned num_parameters;                ///< Sum of num_features and num_transitions 
+  unsigned num_non_null_parameters;       ///< Number of parameters with a zero value
 }; // SimpleLinearCRFModelMetaData
 
 
@@ -68,8 +116,8 @@ private:
   typedef std::vector<ParameterIndexVector>                     ParameterIndexMatrix;
   typedef std::pair<ParameterIndex,Weight>                      ParameterIndexWeightPair;
   typedef std::vector<ParameterIndexWeightPair>                 ParameterIndexWeightPairVector;
-  typedef std::map<ParameterIndex,AttributeID>                  ParameterIndexAttributeIDMap;
-  typedef std::map<ParameterIndex,LabelIDAttributeIDPair>       ParameterIndexToLabelIDAttributeIDPairMap;
+  //typedef std::map<ParameterIndex,AttributeID>                  ParameterIndexAttributeIDMap;
+  //typedef std::map<ParameterIndex,LabelIDAttributeIDPair>       ParameterIndexToLabelIDAttributeIDPairMap;
   
   struct LabelIDPairHash {
     inline unsigned operator()(const LabelIDPair& y) const { return y.first * 18911 + y.second; }
@@ -80,11 +128,13 @@ private:
   typedef boost::unordered_map<AttributeID,ParameterIndex>                    AttributeIDParamIndexMap;
 
 public:
-  /// CRFState represents a state of a higher-order CRF. 
-  /// It consists out of a static vector of size ORDER of label IDs.
+  /** 
+    @brief  CRFHigherOrderState represents a state of a higher-order CRF. 
+            It consists out of a static vector of size ORDER of label IDs.
+  */
   struct CRFHigherOrderState
   {
-    /// Constructor
+    /// Constructor: creates a state of order ORDER, each element of the state vector set to l
     CRFHigherOrderState(LabelID l = LabelID(-1)) 
     {
       // Create a state with history length 1, most often this is (BOS)
@@ -92,16 +142,20 @@ public:
       labels[ORDER-1] = l;
       hist_len = 1;
     }
-
+    
+    /// Returns the label ID at position i (0 <= i < ORDER)
     inline const LabelID operator[](unsigned i) const { return labels[i]; }
+    /// Returns a rerefence to the label ID at position i (0 <= i < ORDER)
     inline LabelID& operator[](unsigned i)            { return labels[i]; }
     inline LabelID label_id()                   const { return labels[ORDER-1]; }
     inline unsigned history_length()            const { return hist_len; }
     inline bool is_bos_state()                  const { return labels[ORDER-hist_len] == BOS_LABEL; }
     
+    /// Compare two higher order states for equality
     inline friend bool operator==(const CRFHigherOrderState& x,const CRFHigherOrderState& y)
     { return memcmp(&x,&y,ORDER*sizeof(LabelID)) == 0; }
 
+    /// Construct a state from a half-open interval of label IDs of length end-begin
     void construct(const LabelID* begin,const LabelID* end)
     {
       if (end-begin == ORDER) {
@@ -168,6 +222,7 @@ public:
       return o << ")";
     }
 
+    /// Construct a string representation from the state
     std::string as_string(const StringUnsignedMapper* labels_mapper) const
     {
       std::string s = "(";
@@ -185,12 +240,15 @@ public:
     unsigned short  hist_len;         ///< Length of the actual history
   }; // CRFState
 
+  /// Function object for creating
   struct CRFStateHash {
     inline unsigned operator()(const CRFHigherOrderState& q) const { return q.hash_value(); }
   }; // CRFStateHash
 
-  /// CRFStateMapper: maps state tuples (for higher-order CRFs) to state IDs 
-  /// (which are also label IDs) and vice versa
+  /**
+    @brief  CRFStateMapper: maps state tuples (for higher-order CRFs) to state IDs 
+            (which are also label IDs) and vice versa
+  */
   class CRFStateMapper
   {
   public:
@@ -357,7 +415,11 @@ public:
     return TransitionConstIterator(in_tr,parameters);
   }
 
-  /// Returns an iterator over the outgoing transitions of y (this is used for higher-order CRFs)
+  /** 
+    @brief  Returns an iterator over the outgoing transitions of y (this is used for higher-order CRFs)
+    @param  y
+    @return An iterator on the outgoing transitions of label 'y' 
+  */
   inline TransitionConstIterator outgoing_transitions_of(LabelID y) const
   {
     static const LabelIDParameterIndexPairVector no_transitions;
@@ -665,11 +727,17 @@ public:
     return num_features; 
   }
 
+  /// Return the number of labels
   unsigned labels_count()       const { return label_attributes.size(); }
+  /// Return the number of states (for ORDER==1, this is the same as labels_count())
   unsigned states_count()       const { return (ORDER == 1) ? labels_count() : state_mapper.num_states(); }
+  /// Return the number of attributes
   unsigned attributes_count()   const { return attributes_mapper.size(); }
+  /// Return the number of transitions
   unsigned transitions_count()  const { return num_transitions; }
+  /// Return the number of parameters
   unsigned parameters_count()   const { return parameters.size(); }
+  /// Returns the order of the model
   unsigned model_order()        const { return ORDER; }
   
   /// Returns the start state of the model. This is currently only meaningful for higher-order CRFs 
@@ -698,7 +766,7 @@ public:
     return m.print(out);
   }
 
-  /// Outputs a graphviz dot representation of the transitions to 'out'
+  /// Outputs a graphviz dot representation of the model transitions to 'out'
   void draw(std::ostream& out) const
   {
     static std::string NodeColors[] = {"","cornflowerblue","blue","navyblue","slateblue","turquoise","indigo","green"};
@@ -933,6 +1001,7 @@ private: // Functions
     //       (read_labels == num_labels) && (read_attributes == num_attrs);
   }
   
+  /// Output a CRFsuite compatible text representation of the model on 'out'
   std::ostream& print(std::ostream& out) const
   {
     typedef std::map<unsigned,std::string> IDStringMap;
@@ -1015,11 +1084,13 @@ private: // Functions
     }
   }   
  
+  /// Add a label with id
   bool add_label(const Label& label, unsigned id) 
   {
     return labels_mapper.add_pair(label,id);
   }
     
+  /// Add an attribute with id
   bool add_attr(const Attribute& attr, unsigned id)
   {
     return attributes_mapper.add_pair(attr,id);
@@ -1127,11 +1198,11 @@ private:
   ParameterVector                               parameters;           ///< All model parameters reside here
   std::vector<AttributeIDParamIndexMap>         label_attributes;     ///<
   std::vector<LabelIDParameterIndexPairVector>  labels_at_attributes; ///<
-  ParameterIndexToLabelIDAttributeIDPairMap     param_to_attr;        ///<
+  //ParameterIndexToLabelIDAttributeIDPairMap     param_to_attr;        ///<
 
   // Model meta data
   unsigned                                      num_transitions;      ///< Number of transitions
-  bool                                          good;
+  bool                                          good;                 ///< Went every well during reading
 }; // SimpleLinearCRFModel
 
 #endif

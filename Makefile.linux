@@ -12,34 +12,36 @@ TCLAP_INCL		= ./include
 MODEL_ORDER	= 1
 
 
-CRF_MODEL_INCLUDES	  = include/SimpleLinearCRFModel.hpp include/CRFTypedefs.hpp include/StringUnsignedMapper.hpp
+CRF_MODEL_INCLUDES 	= include/SimpleLinearCRFModel.hpp include/CRFTypedefs.hpp include/StringUnsignedMapper.hpp
 CRF_TRAINING_INCLUDES	= $(CRF_MODEL_INCLUDES) include/CRFTrainingCorpus.hpp include/CRFDecoder.hpp \
                           include/CRFTraining.hpp include/AveragedPerceptronCRFTrainer.hpp
-NER_ANNOTATE_INCLUDES	= include/NERFeatureExtractor.hpp include/NERConfiguration.hpp include/AsyncTokenizer.hpp \
+CRF_ANNOTATE_INCLUDES	= include/CRFFeatureExtractor.hpp include/CRFConfiguration.hpp include/AsyncTokenizer.hpp \
                           include/TokenWithTag.hpp include/tokenizer.hpp include/next_token.cpp include/WDAWG.hpp
-CRF_APPLY_INCLUDES	  = include/CRFApplier.hpp $(CRF_MODEL_INCLUDES) $(NER_ANNOTATE_INCLUDES) \
+CRF_APPLY_INCLUDES 	= include/CRFApplier.hpp $(CRF_MODEL_INCLUDES) $(CRF_ANNOTATE_INCLUDES) \
                           include/CRFDecoder.hpp include/NEROutputters.hpp 
 
 
 # Binaries
+CRF_ANNOTATE	= crf-annotate
 NER_ANNOTATE	= ner-annotate
 CRF_TRAIN    	= crf-train
-CRF_APPLY	    = crf-apply
-CRF_CONVERT	  = crf-convert
+CRF_APPLY	= crf-apply
+CRF_CONVERT	= crf-convert
 
-CL_OPTIONS	  = -I $(TCLAP_INCL) -O3 -std=c++11
+CL_OPTIONS 	= -I $(TCLAP_INCL) -O3 -std=c++11 -DPCRF_UTF8_SUPPORT
 #CC_COMP        = clang++-3.5
 CC_COMP       = g++
 
 
-all : $(NER_ANNOTATE) $(CRF_TRAIN) $(CRF_APPLY) $(CRF_CONVERT)
+all : $(CRF_ANNOTATE) $(CRF_TRAIN) $(CRF_APPLY) $(CRF_CONVERT)
 
 install: all
-	sudo cp $(NER_ANNOTATE) $(CRF_TRAIN) $(CRF_APPLY) $(CRF_CONVERT) /usr/local/bin
+	sudo cp $(CRF_ANNOTATE) $(CRF_TRAIN) $(CRF_APPLY) $(CRF_CONVERT) /usr/local/bin
 
 
-$(NER_ANNOTATE) : src/ner-annotate.cpp $(NER_ANNOTATE_INCLUDES) include/ner-helpers.hpp
-	$(CC_COMP) $(CL_OPTIONS) -o $(NER_ANNOTATE) src/ner-annotate.cpp
+$(CRF_ANNOTATE) : src/crf-annotate.cpp $(CRF_ANNOTATE_INCLUDES) include/CRFHelpers.hpp
+	$(CC_COMP) $(CL_OPTIONS) -o $(CRF_ANNOTATE) src/crf-annotate.cpp
+	cp $(CRF_ANNOTATE) $(NER_ANNOTATE)
 
 
 $(CRF_TRAIN) : src/crf-train.cpp $(CRF_TRAINING_INCLUDES)
@@ -54,5 +56,5 @@ $(CRF_CONVERT): src/crf-convert.cpp $(CRF_MODEL_INCLUDES)
 	$(CC_COMP) $(CL_OPTIONS) -o $(CRF_CONVERT) src/crf-convert.cpp
 
 clean:
-	rm -f *.o $(NER_ANNOTATE) $(CRF_TRAIN) $(CRF_APPLY) $(CRF_CONVERT)
+	rm -f *.o $(NER_ANNOTATE) $(CRF_ANNOTATE) $(CRF_TRAIN) $(CRF_APPLY) $(CRF_CONVERT)
 

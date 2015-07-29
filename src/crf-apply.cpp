@@ -1,3 +1,13 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// crf-apply.cpp
+// Application and evaluation of CRF models
+// TH, Juli 2015
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+  \page CRFCommands Commands-line tools
+  \section CRFApply crf-apply
+*/
 
 #include <ctime>
 #include <string>
@@ -15,8 +25,8 @@
 #include "../include/SimpleLinearCRFModel.hpp"
 #include "../include/CRFDecoder.hpp"
 #include "../include/CRFUtils.hpp"
-#include "../include/NERFeatureExtractor.hpp"
-#include "../include/NERConfiguration.hpp"
+#include "../include/CRFFeatureExtractor.hpp"
+#include "../include/CRFConfiguration.hpp"
 #include "../include/AsyncTokenizer.hpp"
 #include "../include/NEROutputters.hpp"
 #include "../include/TokenWithTag.hpp"
@@ -29,19 +39,21 @@
 #define NE_RIGHTCONTEXT_LIST    "lists/rc.list.bin"
 #define NE_REGEX_LIST           "lists/regex.list"
 
+#define PROGNAME                "crf-apply"
 
 typedef std::vector<std::string>   StringVector;
 
 // Prototypes
-void parse_options(int argc, char* argv[], std::string&, StringVector&, NERConfiguration&, unsigned&, bool&, bool&, std::string&);
-template<unsigned O> void load_and_apply_model(std::ifstream&,const std::string&,const StringVector&,const NERConfiguration&, bool, bool, const std::string&);
+void parse_options(int argc, char* argv[], std::string&, StringVector&, CRFConfiguration&, unsigned&, bool&, bool&, std::string&);
+template<unsigned O> void load_and_apply_model(std::ifstream&,const std::string&,const StringVector&,const CRFConfiguration&, bool, bool, const std::string&);
 template<unsigned O> void load_clue_lists(CRFApplier<O>&);
 void usage();
+void banner();
 
-
+/// main function
 int main(int argc, char* argv[])
 {
-  NERConfiguration ner_config;
+  CRFConfiguration crf_config;
   StringVector input_files;
   std::string model_file;
   bool eval_mode = false;
@@ -50,34 +62,35 @@ int main(int argc, char* argv[])
   std::string output_format;
   unsigned order = 1;
 
-  parse_options(argc, argv, model_file, input_files, ner_config, order, running_text, eval_mode, output_format);
+  banner();
+  parse_options(argc, argv, model_file, input_files, crf_config, order, running_text, eval_mode, output_format);
 
 //  if (running_text)
 //    ner_config.set_running_text_input(true);
 
   if (order > 3) {
-    std::cerr << "crf-apply: Error: Currently, only the orders 1, 2 or 3 are supported" << std::endl;
+    std::cerr << PROGNAME << ": Error: Currently, only the orders 1, 2 or 3 are supported" << std::endl;
     exit(2);
   }
 
   std::ifstream model_in(model_file.c_str(), std::ios::binary);
   if (!model_in) {
-    std::cerr << "crf-apply: Error: Could not open binary model file '" << model_file << "'\n";
+    std::cerr << PROGNAME << ": Error: Could not open binary model file '" << model_file << "'\n";
     exit(2);
   }
 
-  if      (order == 1) 
-    load_and_apply_model<1>(model_in, model_file, input_files, ner_config, running_text, eval_mode, output_format);
+  if (order == 1) 
+    load_and_apply_model<1>(model_in, model_file, input_files, crf_config, running_text, eval_mode, output_format);
   else if (order == 2) 
-    load_and_apply_model<2>(model_in, model_file, input_files, ner_config, running_text, eval_mode, output_format);
+    load_and_apply_model<2>(model_in, model_file, input_files, crf_config, running_text, eval_mode, output_format);
   else if (order == 3) 
-    load_and_apply_model<3>(model_in, model_file, input_files, ner_config, running_text, eval_mode, output_format);
+    load_and_apply_model<3>(model_in, model_file, input_files, crf_config, running_text, eval_mode, output_format);
 }
 
 
 template<unsigned ORDER>
 void load_and_apply_model(std::ifstream& model_in, const std::string& model_file, 
-                          const StringVector& input_files, const NERConfiguration& ner_config, 
+                          const StringVector& input_files, const CRFConfiguration& crf_config, 
                           bool running_text, bool eval_mode, const std::string& output_format)
 {
   std::cerr << "Loading model '" << model_file << "'\n";
@@ -85,15 +98,16 @@ void load_and_apply_model(std::ifstream& model_in, const std::string& model_file
   model_info(crf_model);
 
   // Construct the applier
-  CRFApplier<ORDER> crf_applier(crf_model,ner_config);
+  CRFApplier<ORDER> crf_applier(crf_model,crf_config);
 
   /// Construct the outputter object
   NEROneWordPerLineOutputter one_word_per_line_outputter(std::cout);
   NERAnnotationOutputter ner_annotation_outputter(std::cout);
   JSONOutputter json_outputter(std::cout);
+  MorphOutputter morph_outputter(std::cout);
   NEROutputterBase* outputter = &one_word_per_line_outputter;
-  if (output_format == "JSON" || output_format == "json") 
-    outputter = &json_outputter;
+  if (output_format == "json") outputter = &json_outputter;
+  else if (output_format == "single-line") outputter = &morph_outputter;
 
   //std::cerr << "Reading in NE lists:";
   //load_clue_lists(crf_applier);
@@ -103,7 +117,7 @@ void load_and_apply_model(std::ifstream& model_in, const std::string& model_file
     std::cerr << "Processing input file '" << input_files[i] << "'" << std::endl;
     std::ifstream test_data_in(input_files[i].c_str());
     if (!test_data_in) {
-      std::cerr << "crf-apply: Error opening file '" << input_files[i] << "'" << std::endl;
+      std::cerr << PROGNAME << ": Error opening file '" << input_files[i] << "'" << std::endl;
       continue;
     }
 
@@ -119,7 +133,7 @@ void load_and_apply_model(std::ifstream& model_in, const std::string& model_file
       crf_applier.apply_to(test_data_in,*outputter,running_text);
     }
     outputter->epilog();
-    unsigned t = clock() - t0;
+    time_t t = float(clock() - t0) * 1000 / CLOCKS_PER_SEC;
 
     std::cerr << "  Processed " << crf_applier.processed_tokens() << " tokens in " 
               << crf_applier.processed_sequences() << " sequences in " << t << "ms ";
@@ -130,9 +144,8 @@ void load_and_apply_model(std::ifstream& model_in, const std::string& model_file
   } // for i
 }
 
-
 void parse_options(int argc, char* argv[], std::string& model_file, 
-                   StringVector& input_files, NERConfiguration& ner_config, 
+                   StringVector& input_files, CRFConfiguration& crf_config, 
                    unsigned& order, bool& running_text, bool& eval_mode, 
                    std::string& output_format)
 {
@@ -151,7 +164,7 @@ void parse_options(int argc, char* argv[], std::string& model_file,
     IntValueArg order_arg("o","order","Model order",false,1,"1,2 or 3");
     BoolArg running_text_arg("r","running-text","Running text (as opposed to tab-separated column style data)",false);
     BoolArg eval_mode_arg("e","eval","Puts crf-apply into evaluation mode",false);
-    StringValueArg output_format_arg("f","format","Output format ",false,"TSV","TSV,JSON");
+    StringValueArg output_format_arg("f","format","Output format ",false,"tsv","tsv,json,single-line");
     TCLAP::UnlabeledMultiArg<std::string> input_files_arg("input","input files",true,"input-filename");
 
     cmd.add(model_file_arg);
@@ -166,12 +179,16 @@ void parse_options(int argc, char* argv[], std::string& model_file,
 
     model_file = model_file_arg.getValue();
     eval_mode = eval_mode_arg.getValue();
-    if (output_format_arg.getValue() == "JSON" || output_format_arg.getValue() == "TSV") {
+
+    std::set<std::string> output_formats;
+    output_formats.insert("tsv"); output_formats.insert("json"); output_formats.insert("single-line");
+    if (output_formats.find(output_format_arg.getValue()) != output_formats.end()) {
       output_format = output_format_arg.getValue();
     }
     else {
-      std::cerr << "crf-apply" << ": Error: Invalid output format '" << output_format_arg.getValue() << "'" << std::endl;
+      std::cerr << PROGNAME << ": Error: Invalid output format '" << output_format_arg.getValue() << "'" << std::endl;
     }
+    
     running_text = running_text_arg.getValue();
     order = order_arg.getValue();
 
@@ -180,11 +197,11 @@ void parse_options(int argc, char* argv[], std::string& model_file,
       std::ifstream conf_in(conf_file.c_str());
       if (conf_in) {
         std::cerr << "Loading configuration file '" << conf_file << "'" << std::endl;
-        ner_config.read_config_file(conf_in);
+        crf_config.read_config_file(conf_in);
         std::cerr << std::endl;
       }
       else {
-        std::cerr << "crf-apply" << ": Error loading configuration file '" << conf_file << "'" << std::endl;
+        std::cerr << PROGNAME << ": Error loading configuration file '" << conf_file << "'" << std::endl;
       }
     }
 
@@ -199,11 +216,13 @@ void parse_options(int argc, char* argv[], std::string& model_file,
 
 void usage()
 {
-  std::cerr << "Usage: " << "crf-apply" << " -c CONFIG-FILE -m MODEL-FILE [-e] TEXT-FILE ..." << std::endl << std::endl;
+  std::cerr << "Usage: " << "crf-apply" << " -c CONFIG-FILE -m MODEL-FILE [-e] [-r] [-f OUTPUT-TYPE] TEXT-FILE ..." << std::endl << std::endl;
   std::cerr << "  CONFIG-FILE is the configuration file" << std::endl;
   std::cerr << "  MODEL-FILE is the binary file as produced by crf-train or crf-convert" << std::endl;
-  std::cerr << "  TEXT-FILE is a standard ISO text file (UTF-8 will be supported soon)" << std::endl;
+  std::cerr << "  TEXT-FILE is a standard UTF-8-encoded text file" << std::endl;
+  std::cerr << "  OUTPUT-TYPE determines the form of the output: 'tsv' means column-style, 'json' is JSON-output\n";
   std::cerr << "  -e puts crf-apply into evaluation mode (this assumes a special annotation in the input text files)\n";
+  std::cerr << "  -r tells crf-apply to assume a running text file (as opposed to a tab-separated input file)\n";
   std::cerr << std::endl << "Example: crf-apply -c ner.cfg -m mymodel.crf" << std::endl;
   exit(1);
 }
@@ -217,7 +236,7 @@ void load_clue_lists(CRFApplier<O>& crf_applier)
     std::cerr << " " << fn1;
     //crf_applier.add_ne_list(list_in1);
   }
-  else std::cerr << "\nError: crf-test: Unable to open NE list '" << fn1 << "'" << std::endl;
+  else std::cerr << "\n" << PROGNAME << ": Error: Unable to open NE list '" << fn1 << "'" << std::endl;
 
   const char* fn2 = NE_LEFTCONTEXT_LIST;
   std::ifstream list_in2(fn2,std::ios::binary);
@@ -225,7 +244,7 @@ void load_clue_lists(CRFApplier<O>& crf_applier)
     std::cerr << " " << fn2;
     crf_applier.add_left_context_list(list_in2);
   }
-  else std::cerr << "\nError: crf-test: Unable to open context list '" << fn2 << "'" << std::endl;
+  else std::cerr << "\n" << PROGNAME << ": Error: Unable to open context list '" << fn1 << "'" << std::endl;
 
   const char* fn3 = NE_RIGHTCONTEXT_LIST;
   std::ifstream list_in3(fn3,std::ios::binary);
@@ -233,7 +252,7 @@ void load_clue_lists(CRFApplier<O>& crf_applier)
     std::cerr << " " << fn3;
     crf_applier.add_left_context_list(list_in3);
   }
-  else std::cerr << "\nError: crf-test: Unable to open context list '" << fn3 << "'" << std::endl;
+  else std::cerr << "\n" << PROGNAME << ": Error: Unable to open context list '" << fn1 << "'" << std::endl;
 
   const char* fn4 = PERSONNAMES_LIST;
   std::ifstream list_in4(fn4,std::ios::binary);
@@ -241,6 +260,17 @@ void load_clue_lists(CRFApplier<O>& crf_applier)
     std::cerr << " " << fn4;
     crf_applier.add_person_names_list(list_in4);
   }
-  else std::cerr << "\nError: crf-test: Unable to open person name list '" << fn4 << "'" << std::endl;
+  else std::cerr << "\n" << PROGNAME << ": Error: Unable to NE list '" << fn1 << "'" << std::endl;
+}
+
+void banner()
+{
+  std::cerr << PROGNAME << " (";
+  #ifdef PCRF_UTF8_SUPPORT
+    std::cerr << "UTF-8 encoding";
+  #else
+    std::cerr << "Latin1 encoding";
+  #endif
+  std::cerr << ")" << std::endl;
 }
 

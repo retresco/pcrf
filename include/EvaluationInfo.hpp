@@ -3,6 +3,7 @@
 
 #include <string>
 
+/// Computes precision/recall/F1 score
 struct EvaluationInfo
 {
   EvaluationInfo(const std::string& zh = "") 
