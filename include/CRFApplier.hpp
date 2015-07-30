@@ -91,7 +91,7 @@ public:
     @todo This is more or less redundant code! 
   */
   template<typename OUTPUT_METHOD>
-  void apply_to(const TokenWithTagSequence& seq, OUTPUT_METHOD& outputter)
+  void apply_to(TokenWithTagSequence& seq, OUTPUT_METHOD& outputter)
   {
     TranslatedCRFInputSequence translated_crf_iseq(seq.size());
     LabelIDSequence inferred_label_ids(seq.size(),0);
