@@ -4,30 +4,27 @@
 .B crf-train file format
 
 .SH INPUT DESCRIPTION
-The input to 
-.B crf-train
-are sequences of 
-.B labeled and annotated sequences
-.
-Each labeled and annotated sequence consists out of lines with at least two columns 
-(separated by tabs) each containing an input token followed by the corresponding 
-output label at a sequence of features.
+The input to \fBcrf-train\fR are sequences of 
+\fIlabeled and annotated sequences\fR.
+Each labeled and annotated sequence consists out of several lines 
+each with at least two columns (separated by tabs),
+containing an input token followed by the corresponding 
+output label and a sequence of attributes (strings).
 Sequences are separated by each other by an empty line.
 More formally, the input is specified by the following regular expressions:
 
 .br 
 <INPUT-CORPUS> = (<LABELED-ANNOTATED-SEQ> <NL>)+
 .br 
-<LABELED-ANNOTATED-SEQ> = (<INPUT-TOKEN> <TAB> <OUTPUT-LABEL> (<FEATURES>?) <NL>)+
+<LABELED-ANNOTATED-SEQ> = (<INPUT-TOKEN> <TAB> <OUTPUT-LABEL> (<ATTRIBUTES>?) <NL>)+
 .br 
-<INPUT-TOKEN> = string
+<INPUT-TOKEN> = <STRING>
 .br 
-<OUTPUT-LABEL> = string
+<OUTPUT-LABEL> = <STRING>
 .br
-<FEATURES> = FEAT (<TAB> FEAT)*
+<ATTRIBUTES> = ATTR (<TAB> ATTR)*
 .br 
-<FEAT> = string
-
+<ATTR> = <STRING>
 
 .SH INPUT EXAMPLE
 
@@ -41,7 +38,7 @@ short       JJ  w[0]=short  w[-1..0]=a|short  w[0..1]=short|sentence
 .br
 sentence    NN   w[0]=sentence  w[-1..0]=short|sentence  w[0..1]=sentence|.
 .br
-\.           \.    w[0]=.  w[-1..0]=sentence|.  w[0..1]=.|EOS
+"."         "."    w[0]=.  w[-1..0]=sentence|.  w[0..1]=.|EOS
 .br
 .br
 
@@ -51,16 +48,28 @@ is          VBZ w[0]=is  w[-1..0]=So|is  w[0..1]=is|this
 .br
 this        DT  w[0]=this  w[-1..0]=is|this  w[0..1]=is|.  
 .br
-\.           \.   w[0]=.  w[-1..0]=is|.  w[0..1]=.|EOS
+"."         "."   w[0]=.  w[-1..0]=is|.  w[0..1]=.|EOS
 
 
 .SH OUTPUT DESCRIPTION
+The model is written to a binary file which consist of several parts:
+.br
+- the attributes and their unique mapping to integers, 
+.br
+- the labels and their unique mapping to integers, 
+.br
+- the transitions
+.br
+- the labels and their attributes
+.br
+- the parameters.
+
 
 .SH SEE ALSO
-crf-train(1)
+.B crf-train(1)
 
 .SH TODO
-Document CRF binary file format.
+Document CRF binary file format in more detail.
 
 .SH AUTHOR
 Thomas Hanneforth, University of Potsdam (Thomas.Hanneforth@uni-potsdam.de)

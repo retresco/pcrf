@@ -1,16 +1,16 @@
-# Linux Makefile for PCRF utilities
+# Linux Makefile for PCRF tools
 # Try "sudo make -f Makefile.linux install" 
-# (assumes that an directory /usr/local/bin exists)
+# (assumes that an directories /usr/local/bin and /usr/local/share/man exist)
 
 # You need the following:
 # - A newer version of boost (www.boost.org) (apt-get install libboost-all-dev)
+# - The doxygen documentation tool (apt-get install doxygen)
+
+MAN_DEST_DIR		= /usr/local/share/man
+BIN_DEST_DIR		= /usr/local/bin
 
 # Fill in path for TCLAP
 TCLAP_INCL		= ./include
-
-# Order of the CRF model to be trained and applied
-MODEL_ORDER	= 1
-
 
 CRF_MODEL_INCLUDES 	= include/SimpleLinearCRFModel.hpp include/CRFTypedefs.hpp include/StringUnsignedMapper.hpp
 CRF_TRAINING_INCLUDES	= $(CRF_MODEL_INCLUDES) include/CRFTrainingCorpus.hpp include/CRFDecoder.hpp \
@@ -30,13 +30,35 @@ CRF_CONVERT	= crf-convert
 
 CL_OPTIONS 	= -I $(TCLAP_INCL) -O3 -std=c++11 -DPCRF_UTF8_SUPPORT
 #CC_COMP        = clang++-3.5
-CC_COMP       = g++
+CC_COMP       	= g++
 
 
-all : $(CRF_ANNOTATE) $(CRF_TRAIN) $(CRF_APPLY) $(CRF_CONVERT)
+all : binaries documentation
+
+binaries: $(CRF_ANNOTATE) $(CRF_TRAIN) $(CRF_APPLY) $(CRF_CONVERT)
+	cd python-wrapper ; make
+
+documentation :
+	if [ ! -d "doc/html" ]; then cd doc ; doxygen pcrf.doxygen; fi
 
 install: all
-	sudo cp $(CRF_ANNOTATE) $(CRF_TRAIN) $(CRF_APPLY) $(CRF_CONVERT) /usr/local/bin
+	sudo cp $(CRF_ANNOTATE) $(CRF_TRAIN) $(CRF_APPLY) $(CRF_CONVERT) $(BIN_DEST_DIR)
+	sudo mkdir -p $(MAN_DEST_DIR)/man1 $(MAN_DEST_DIR)/man5
+	sudo cp doc/crf-annotate.man.1 $(MAN_DEST_DIR)/man1/crf-annotate.1
+	sudo cp doc/crf-train.man.1 $(MAN_DEST_DIR)/man1/crf-train.1
+	sudo cp doc/crf-apply.man.1 $(MAN_DEST_DIR)/man1/crf-apply.1
+	sudo cp doc/crf-annotate.man.5 $(MAN_DEST_DIR)/man5/crf-annotate.5
+	sudo cp doc/crf-train.man.5 $(MAN_DEST_DIR)/man5/crf-train.5
+	sudo cp doc/crf-conf.man.5 $(MAN_DEST_DIR)/man5/crf-conf.5
+	sudo cp doc/crf-conf.man.5 $(MAN_DEST_DIR)/man5/crf-apply.5
+	sudo gzip -f $(MAN_DEST_DIR)/man1/crf-annotate.1
+	sudo gzip -f $(MAN_DEST_DIR)/man1/crf-train.1
+	sudo gzip -f $(MAN_DEST_DIR)/man1/crf-apply.1
+	sudo gzip -f $(MAN_DEST_DIR)/man5/crf-annotate.5
+	sudo gzip -f $(MAN_DEST_DIR)/man5/crf-train.5
+	sudo gzip -f $(MAN_DEST_DIR)/man5/crf-conf.5
+	sudo gzip -f $(MAN_DEST_DIR)/man5/crf-apply.5
+	sudo mandb
 
 
 $(CRF_ANNOTATE) : src/crf-annotate.cpp $(CRF_ANNOTATE_INCLUDES) include/CRFHelpers.hpp
@@ -57,4 +79,6 @@ $(CRF_CONVERT): src/crf-convert.cpp $(CRF_MODEL_INCLUDES)
 
 clean:
 	rm -f *.o $(NER_ANNOTATE) $(CRF_ANNOTATE) $(CRF_TRAIN) $(CRF_APPLY) $(CRF_CONVERT)
+	rm -rf doc/html
+	cd python-wrapper ; make clean
 

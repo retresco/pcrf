@@ -14,7 +14,8 @@ sudo apt-get install libboost-all-dev
 --------------------------------------------------------------------------------
 Build/installation
 --------------------------------------------------------------------------------
-sudo make -f Makefile.linux install
+$ make -f Makefile.linux install
+$ sudo make -f Makefile.linux install
 (assuming that you have a directory /usr/local/bin)
 
 

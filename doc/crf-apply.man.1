@@ -1,7 +1,7 @@
 .TH man 1 "24 July 2015" "1.0" "crf-apply man page"
 
 .SH NAME
-crf-apply \- Applies a Conditional Random Field model to iput data
+crf-apply \- Applies a Conditional Random Field model to input data
 
 .SH SYNOPSIS
 .B crf-apply 
@@ -22,17 +22,17 @@ MODELFILE
 .BR -c " "CONFIGFILE ",  " --config " " CONFIGFILE
 Configuration file which determines the features to be annotated to the input tokens
 during application.
-See crf-conf(5) for the format of this configuration file.
+See \fBcrf-conf(5)\fR for the format of this configuration file.
 
 .TP
 .BR -o " " {1,2,3} ",  "  --order {1,2,3}
 Model order. 
 The order of a CRF-model is roughly the same as the N in an N-gram model.
-The model order must match the one specified during crf-train.
+The model order must match the one specified during \fBcrf-train(1)\fR.
 
 .TP
 .BR -m " " MODELFILE ",  " --model " " MODELFILE
-The CRF-model to be applied (as created by crf-train(1))
+The CRF-model to be applied (as created by \fBcrf-train(1)\fR)
 
 .TP
 .BR -f " " FORMAT ",  " --format " " FORMAT
@@ -41,10 +41,10 @@ The output format. Currently,
 supports the following output formats:
 a)
 .B tsv 
-outputs tab-separated data,
+outputs tab-separated data (where an empty line separates sequences)
 b)
 .B json
-outputs JSON format, and
+outputs JSON format (with keys ..., currently only supported for NE recognition), and
 c)
 .B single-line
 outputs first the whole input token sequence followed a tab followed by the whole label sequence.
@@ -52,16 +52,12 @@ Between the sequences, a newline is outputted.
 
 .TP 
 .BR -r ", " --runnning-text
-If set, 
-.B crf-apply 
-assumes that is input is UTF-8 encoded running text. 
-crf-annotate then extracts sequences from that input by using an heuristic 
+If set, \fBcrf-apply\fR assumes that is input is UTF-8 encoded running text. 
+\fBcrf-apply\fR then extracts sequences from that input by using an heuristic 
 sentence segmenter (for English). 
-The sequences are tokenised, annotated with the user-specified attributes 
+The sequences are tokenised, annotated with user-specified attributes 
 and then written to the output.
-If not set, 
-.B crf-apply
-assumes tab-separated input data (see crf-annotate(1)).
+If not set, \fBcrf-apply\fR assumes tab-separated input data (see \fBcrf-annotate(1)\fR).
 
 .TP 
 .BR -e ", " --eval
@@ -73,17 +69,13 @@ Evaluation is currently only supported for tab-separated input and output data.
 Displays usage information and exits.
 
 .SH DESCRIPTION
-.B crf-apply 
-applies a trained CRF-model (see crf-train(1)) to UTF-8 encoded input text data.
+\fBcrf-apply\fR applies a trained CRF-model (see \fBcrf-train(1)\fR) 
+to UTF-8 encoded input text data.
 Text data can be either running text or tab-separated column data.
-The output of 
-.B crf-apply
-can be rendered in different formats (see -f option) 
-and is written to stdout.
-crf-apply also has an evaluation mode which requires input annotated with the correct labels.
-In that case, 
-.B crf-apply
-also outputs accuracy, precison, recall and F1-score.
+The output of \fBcrf-apply\fR can be rendered in different formats 
+(see -f option) and is written to stdout.
+\fBcrf-apply\fR also has an evaluation mode which requires input annotated with the correct labels.
+In that case, \fBcrf-apply\fR also outputs accuracy, precison, recall and F1-score.
 
 .SH SEE ALSO
 .B crf-train(1)

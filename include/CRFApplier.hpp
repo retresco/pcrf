@@ -82,13 +82,14 @@ public:
   }
 
   /** 
-    @brief Applies the CRF model to a text file (containg table data or running text).
-           The file must contain the correct output label for each token in a sequence
-    @param seq UTF-8 encoded sequence.
-    @param outputter Function object which implements the output of the results in different
-           formats. The outputter object is called every time a full sequence was annotated 
-           by the model. The outputter must be derived from NEROutputterBase.
-    @todo This is more or less redundant code! 
+    @brief  Applies the CRF model to a text file (containg table data or running text).
+            The file must contain the correct output label for each token in a sequence
+    @param  seq UTF-8 encoded sequence containing TokenWithTag instances to which apply_to()
+            will add the inferred output label.
+    @param  outputter Function object which implements the output of the results in different
+            formats. The outputter object is called every time a full sequence was annotated 
+            by the model. The outputter must be derived from NEROutputterBase.
+    @todo   This is more or less redundant code! 
   */
   template<typename OUTPUT_METHOD>
   void apply_to(TokenWithTagSequence& seq, OUTPUT_METHOD& outputter)

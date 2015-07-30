@@ -20,22 +20,27 @@ SUPERVISED-TRAINING-DATA
 
 .TP
 .BR -c " "CONFIGFILE ",  " --config " " CONFIGFILE
-Configuration file which determines the features to be annotated to the input tokens
-during application.
-See crf-conf(5) for the format of this configuration file.
+Configuration file which determines the features to be annotated to the tokens 
+of the input sequences during annotation/application.
+See \fBcrf-conf(5)\fR for the format of this configuration file.
 
 .TP 
 .BR -r ", " --runnning-text
 If set, 
 .B crf-annotate 
-assumes that is input is UTF-8 encoded running text. 
-crf-annotate then extracts sequences from that input by using an heuristic 
+assumes that its input is UTF-8 encoded running text. 
+\fBcrf-annotate\fR then extracts sequences from that input by using an heuristic 
 sentence segmenter (for English). 
-The sequences are tokenised, annotated with the user-specified attributes 
+A sequence can never cross a line break. 
+A line can consist of several sequences.
+The sequences are tokenised, annotated with user-specified attributes 
 and then written to the output.
-If not set, 
-.B crf-annotate
-assumes tab-separated input data (see crf-annotate(5)).
+In running text mode, \fBcrf-annotate\fR processes the special 
+named-entity annotation syntax where the named entities are enclosed
+within <ne class="C"> ... </ne> where C is \fBLOC\fR(ation), \fBPER\fR(son), 
+\fBORG\fR(anization), \fBPRO\fR(duct) or \fBEVE\fR(nt).
+If not set, \fBcrf-annotate\fR assumes tab-separated input data
+(\fBcrf-annotate(5)\fR).
 
 .TP 
 .BR -t
@@ -46,15 +51,13 @@ Add the input token also to the output
 Displays usage information and exits.
 
 .SH DESCRIPTION
-.B crf-annotate 
-is usually the first step for training linear Conditional Random Fields (LCRFs).
-.B crf-annotate
-reads labeled sequences from the text file SUPERVISED-TRAINING-DATA
-(whose elements consist in the simplest case of an input token and a given output label) 
-and adds attributes to it. Attributes are either derived from the input token and its contexts 
+\fBcrf-annotate\fR is usually the first step for training \fIlinear Conditional Random Fields\fR (LCRFs).
+\fBcrf-annotate\fR extracts labeled sequences from the UTF-8 encoded text file SUPERVISED-TRAINING-DATA.
+\fBcrf-annotate\fR handles running-text or tab-separated data.
+After sequence extraction, the attributes specified in the configuration file are added 
+to the input tokens and the results are written to stdout.
+Attributes are either derived from the input tokens and their contexts 
 (for example N-gram features) or can be taken from external ressources. 
-.B crf-annotate 
-handles running-text or tab-separated data and writes the results to stdout.
 
 .SH SEE ALSO
 .B crf-train(1)
@@ -72,7 +75,8 @@ handles running-text or tab-separated data and writes the results to stdout.
 .
 
 .SH BUGS
-No known bugs.
+The annotation mechanism for running text containing labeled subsequences is currently 
+restricted to named-entity recognition.
 
 .SH AUTHOR
 Thomas Hanneforth, University of Potsdam (Thomas.Hanneforth@uni-potsdam.de)
