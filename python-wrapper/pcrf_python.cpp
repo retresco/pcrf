@@ -44,6 +44,7 @@ public:
   {
     std::stringstream in_sstr(input);
     out_sstr->clear();
+    out_sstr->str("");
     
     current_outputter->prolog();
     crf_applier.apply_to(in_sstr,*current_outputter,true);
@@ -59,6 +60,7 @@ public:
     if (!in) return "";
 
     out_sstr->clear();
+    out_sstr->str("");
     current_outputter->prolog();
     crf_applier.apply_to(in,*current_outputter,true);
     current_outputter->epilog();
