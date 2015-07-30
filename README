@@ -37,4 +37,11 @@ After installing, go to the demo folder and type
 $ bash chunk-demo.sh
 
 
+--------------------------------------------------------------------------------
+Documentation
+--------------------------------------------------------------------------------
+After installation, you find a doxygen source code documentation in doc/html.
+Furthermore, a couple of man pages crf-annotate(1), crf-train(1), crf-apply(1),
+crf-annotate(5), crf-train(5), and crf-conf(5) are installed under 
+/usr/local/share/man.
 

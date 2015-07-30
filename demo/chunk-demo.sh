@@ -39,7 +39,7 @@ echo "================================================================"
 
 echo
 echo "================================================================"
-echo "Apply CRF-model to running text in " $input
+echo "Apply CRF-model to running text in " $input " , creating " $input.result
 echo "================================================================"
 # Apply model to running text
 ../crf-apply -c chunk.cfg --running-text -m chunker.model --order 1 $input > $input.result
