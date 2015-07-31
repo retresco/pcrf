@@ -14,7 +14,8 @@ MODELFILE
 ] 
 [
 .B -e
-] 
+]
+INPUT-DATA
  
 .SH OPTIONS
 
@@ -52,7 +53,7 @@ Between the sequences, a newline is outputted.
 
 .TP 
 .BR -r ", " --runnning-text
-If set, \fBcrf-apply\fR assumes that is input is UTF-8 encoded running text. 
+If set, \fBcrf-apply\fR assumes that its input in INPUT-DATA is UTF-8 encoded running text. 
 \fBcrf-apply\fR then extracts sequences from that input by using an heuristic 
 sentence segmenter (for English). 
 The sequences are tokenised, annotated with user-specified attributes 
@@ -70,7 +71,7 @@ Displays usage information and exits.
 
 .SH DESCRIPTION
 \fBcrf-apply\fR applies a trained CRF-model (see \fBcrf-train(1)\fR) 
-to UTF-8 encoded input text data.
+to UTF-8 encoded input text data in INPUT-DATA.
 Text data can be either running text or tab-separated column data.
 The output of \fBcrf-apply\fR can be rendered in different formats 
 (see -f option) and is written to stdout.
