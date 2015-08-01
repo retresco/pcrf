@@ -146,13 +146,16 @@ void load_and_apply_model(std::ifstream& model_in, const std::string& model_file
 /// Output evaluation statistics
 void show_evaluation_results(const EvaluationInfo& e, const LabelSet& labels) 
 {
-  std::cerr << "\n================================================\n";
+  const std::string equals(50,'=');
+  const std::string dashes(50,'-');
+
+  std::cerr << std::endl << equals << std::endl;
   std::cerr << "Evaluation\n";
-  std::cerr << "================================================\n";
+  std::cerr << equals << std::endl;
   std::cerr << "Global accuracy:  " << (e.accuracy()*100) << "%\n";
-  std::cerr << "\n------------------------------------------------\n";
+  std::cerr << std::endl << dashes << std::endl;
   std::cerr << "Label                    Prec      Rec       F1\n";
-  std::cerr << "------------------------------------------------\n";
+  std::cerr << dashes << std::endl;
   for (auto l = labels.begin(); l != labels.end(); ++l) {
     std::cerr << std::left << std::setw(20) << *l; 
     std::cerr << std::right << std::setw(10) << std::setprecision(4) << (e.precision(*l)*100) << "%";
@@ -160,7 +163,7 @@ void show_evaluation_results(const EvaluationInfo& e, const LabelSet& labels)
     std::cerr << std::endl;
     //std::cerr << "  Recall:    " << (e.recall()*100) << "%\n";
   }
-  std::cerr << "-------------------------------------------------\n";
+  std::cerr << dashes << std::endl;
 }
 
 void parse_options(int argc, char* argv[], std::string& model_file, 

@@ -23,7 +23,8 @@ struct CRFOutputterBase
 /// Output for one word plus annotation per line on a stream
 struct NEROneWordPerLineOutputter : public CRFOutputterBase
 {
-  NEROneWordPerLineOutputter(std::ostream& o) : out(o) {}
+  NEROneWordPerLineOutputter(std::ostream& o, const std::string& dl) 
+  : out(o), default_label(dl) {}
 
   void prolog() {}
   void epilog() {}
@@ -52,8 +53,8 @@ struct NEROneWordPerLineOutputter : public CRFOutputterBase
 /// Output results as structured JSON output on a string stream
 struct JSONOutputter : public CRFOutputterBase
 {
-  JSONOutputter(std::ostream& o, bool pp=true) 
-  : out(o), pretty_print(pp), entity_outputted(false) {}
+  JSONOutputter(std::ostream& o, const std::string& dl, bool pp=true) 
+  : out(o), default_label(dl), pretty_print(pp), entity_outputted(false) {}
 
   void prolog()
   {
@@ -79,7 +80,7 @@ struct JSONOutputter : public CRFOutputterBase
     bool in_ne = false;
 
     for (auto t = sentence.begin(); t != sentence.end(); ++t) {
-      if (t->label == "OTHER") {
+      if (t->label == default_label) {
         if (in_ne) {
           // In the BIO annotation scheme, there's no L-marker
           output_ne(mwe,ne_type,ne_start_offset,ne_end_offset);
@@ -163,9 +164,10 @@ private:
   } 
 
 private:
-  std::ostream& out;      ///< Output stream
-  bool pretty_print;      ///< Add indentation and newlines to the output
-  bool entity_outputted;  ///< Used for placing syntactically correct commas in the JSON output
+  std::ostream& out;                ///< Output stream
+  std::string   default_label;
+  bool          pretty_print;      ///< Add indentation and newlines to the output
+  bool          entity_outputted;  ///< Used for placing syntactically correct commas in the JSON output
 }; // JSONLineOutputter
 
 
@@ -174,7 +176,8 @@ private:
 /// Note: this is a bit too much tailored towards NE recognition 
 struct NERAnnotationOutputter : public CRFOutputterBase
 {
-  NERAnnotationOutputter(std::ostream& o) : out(o) {}
+  NERAnnotationOutputter(std::ostream& o, const std::string& dl) 
+  : out(o), default_label(dl) {}
 
   void prolog() {}
   void epilog() {}
@@ -184,7 +187,7 @@ struct NERAnnotationOutputter : public CRFOutputterBase
     bool in_ne = false;
     for (unsigned i = 0; i < sentence.size(); ++i) {
       const TokenWithTag& t = sentence[i];       
-      if (t.label == "OTHER") {
+      if (t.label == default_label) {
 
         if (in_ne) {
           out << "</ne>";
@@ -236,6 +239,7 @@ struct NERAnnotationOutputter : public CRFOutputterBase
   }
 
   std::ostream& out;
+  std::string default_label;
 }; // NERAnnotationOutputter
 
 
