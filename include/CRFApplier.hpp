@@ -147,7 +147,7 @@ public:
   {
     EvaluationInfo e(crf_config.get_default_label());
     if (running_text)
-      (text_in,outputter,true,e);
+      apply_to_running_text(text_in,outputter,true,e);
     else 
       apply_to_column_data(text_in,outputter,true,e);
     return e;

@@ -46,6 +46,7 @@ typedef std::vector<std::string>   StringVector;
 // Prototypes
 void parse_options(int argc, char* argv[], std::string&, StringVector&, CRFConfiguration&, unsigned&, bool&, bool&, std::string&);
 template<unsigned O> void load_and_apply_model(std::ifstream&,const std::string&,const StringVector&,const CRFConfiguration&, bool, bool, const std::string&);
+void show_evaluation_results(const EvaluationInfo&, const LabelSet&);
 template<unsigned O> void load_clue_lists(CRFApplier<O>&);
 void usage();
 void banner();
@@ -125,9 +126,7 @@ void load_and_apply_model(std::ifstream& model_in, const std::string& model_file
     outputter->prolog();
     if (eval_mode) {
       EvaluationInfo e = crf_applier.evaluation_of(test_data_in,*outputter,running_text);
-      std::cerr << "  Accuracy:  " << (e.accuracy()*100) << "%\n";
-      std::cerr << "  Precision: " << (e.precision()*100) << "%\n";
-      std::cerr << "  Recall:    " << (e.recall()*100) << "%\n";
+      show_evaluation_results(e, crf_model.get_labels());
     }
     else {
       crf_applier.apply_to(test_data_in,*outputter,running_text);
@@ -142,6 +141,26 @@ void load_and_apply_model(std::ifstream& model_in, const std::string& model_file
     else 
       std::cerr << std::endl;
   } // for i
+}
+
+/// Output evaluation statistics
+void show_evaluation_results(const EvaluationInfo& e, const LabelSet& labels) 
+{
+  std::cerr << "\n================================================\n";
+  std::cerr << "Evaluation\n";
+  std::cerr << "================================================\n";
+  std::cerr << "Global accuracy:  " << (e.accuracy()*100) << "%\n";
+  std::cerr << "\n------------------------------------------------\n";
+  std::cerr << "Label                    Prec      Rec       F1\n";
+  std::cerr << "------------------------------------------------\n";
+  for (auto l = labels.begin(); l != labels.end(); ++l) {
+    std::cerr << std::left << std::setw(20) << *l; 
+    std::cerr << std::right << std::setw(10) << std::setprecision(4) << (e.precision(*l)*100) << "%";
+    std::cerr << std::right << "    " << std::setprecision(4) << (e.recall(*l)*100) << "%";
+    std::cerr << std::endl;
+    //std::cerr << "  Recall:    " << (e.recall()*100) << "%\n";
+  }
+  std::cerr << "-------------------------------------------------\n";
 }
 
 void parse_options(int argc, char* argv[], std::string& model_file, 

@@ -760,6 +760,17 @@ public:
   /// Read-only access to the parameters
   const ParameterVector& get_parameters() const { return parameters; }
 
+  /// Return the set of all labels
+  LabelSet get_labels() const
+  {
+    LabelSet labels;
+    for (auto l = labels_mapper.begin(); l != labels_mapper.end(); ++l) {
+      if (l->first != "<BOS>")
+        labels.insert(l->first);
+    }
+    return labels;
+  }
+
   /// Outputs model in textual form on 'out'
   friend std::ostream& operator<<(std::ostream& out, const SimpleLinearCRFModel& m)
   {

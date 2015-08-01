@@ -142,7 +142,7 @@ public:
         if (tokens[0] == "Columns")                                         set_columns(tokens[2]);
         else if (tokens[0] == "DefaultLabel") {
           default_label = tokens[2];
-          std::cerr << "  DefaultLabel      = " << default_label << std::endl;
+          //std::cerr << "  DefaultLabel      = " << default_label << std::endl;
         }
         
         else if (tokens[0] == "Patterns")                                   patterns_list_filename = tokens[2];
