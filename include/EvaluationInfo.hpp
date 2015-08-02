@@ -4,11 +4,15 @@
 #include <string>
 #include <boost/unordered_map.hpp>
 
+#include "CRFTypedefs.hpp"
+
 /// Computes precision/recall/F1 score
-struct EvaluationInfo
+class EvaluationInfo
 {
+private:
   typedef boost::unordered_map<std::string,unsigned>  CountMap;
 
+public:
   EvaluationInfo(std::string dummy="") : total_labels(0), correct_labels(0) {}
 
   /// Returns the global accuracy
@@ -28,16 +32,25 @@ struct EvaluationInfo
   }
 
   /// Returns the overall (micro-averaged) precision
-  float precision() const 
+  float precision(bool macro_averaged) const
   {
-    unsigned true_pos = 0, false_pos = 0;
-    for (auto tp = true_positive_labels.begin(); tp != true_positive_labels.end(); ++tp) {
-      true_pos += tp->second;
+    if (macro_averaged) {
+      LabelSet ls = labels();
+      float prec_sum = 0.0;
+      for (auto l = ls.begin(); l != ls.end(); ++l) 
+        prec_sum += precision(*l);
+      return prec_sum/ls.size();
     }
-    for (auto fp = false_positive_labels.begin(); fp != false_positive_labels.end(); ++fp) {
-      false_pos += fp->second;
+    else {
+      unsigned true_pos = 0, false_pos = 0;
+      for (auto tp = true_positive_labels.begin(); tp != true_positive_labels.end(); ++tp) {
+        true_pos += tp->second;
+      }
+      for (auto fp = false_positive_labels.begin(); fp != false_positive_labels.end(); ++fp) {
+        false_pos += fp->second;
+      }
+      return true_pos/float(true_pos+false_pos);
     }
-    return true_pos/float(true_pos+false_pos);
   }
 
   /// Returns the label-wise recall
@@ -50,6 +63,7 @@ struct EvaluationInfo
     return tp->second/float(tp->second+false_neg);
   }
 
+  ///
   float recall() const 
   {
     unsigned true_pos = 0, false_neg = 0;
@@ -81,6 +95,20 @@ struct EvaluationInfo
     }
   }
 
+private:
+  LabelSet labels() const
+  {
+    LabelSet l;
+    for (auto tp = true_positive_labels.begin(); tp != true_positive_labels.end(); ++tp)
+      l.insert(tp->first);
+//    for (auto fp = false_positive_labels.begin(); fp != false_positive_labels.end(); ++fp)
+//      l.insert(fp->first);
+//    for (auto fn = false_negative_labels.begin(); fn != false_negative_labels.end(); ++fn)
+//      l.insert(fn->first);
+    return l;
+  }
+
+private:
   unsigned total_labels;
   unsigned correct_labels;
   CountMap true_positive_labels;

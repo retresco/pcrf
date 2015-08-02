@@ -47,6 +47,7 @@ struct NEROneWordPerLineOutputter : public CRFOutputterBase
   }
 
   std::ostream& out;
+  std::string default_label;
 }; // NEROneWordPerLineOutputter
 
 

@@ -30,7 +30,7 @@
 #include "../include/CRFFeatureExtractor.hpp"
 #include "../include/CRFConfiguration.hpp"
 #include "../include/AsyncTokenizer.hpp"
-#include "../include/NEROutputters.hpp"
+#include "../include/CRFOutputters.hpp"
 #include "../include/TokenWithTag.hpp"
 
 
@@ -104,11 +104,11 @@ void load_and_apply_model(std::ifstream& model_in, const std::string& model_file
   CRFApplier<ORDER> crf_applier(crf_model,crf_config);
 
   /// Construct the outputter object
-  NEROneWordPerLineOutputter one_word_per_line_outputter(std::cout);
-  NERAnnotationOutputter ner_annotation_outputter(std::cout);
-  JSONOutputter json_outputter(std::cout);
+  NEROneWordPerLineOutputter one_word_per_line_outputter(std::cout,crf_config.get_default_label());
+  NERAnnotationOutputter ner_annotation_outputter(std::cout,crf_config.get_default_label());
+  JSONOutputter json_outputter(std::cout,crf_config.get_default_label());
   MorphOutputter morph_outputter(std::cout);
-  NEROutputterBase* outputter = &one_word_per_line_outputter;
+  CRFOutputterBase* outputter = &one_word_per_line_outputter;
   if (output_format == "json") outputter = &json_outputter;
   else if (output_format == "single-line") outputter = &morph_outputter;
 
@@ -154,8 +154,8 @@ void show_evaluation_results(const EvaluationInfo& e, const LabelSet& labels)
   std::cerr << std::endl << equals << std::endl;
   std::cerr << "Evaluation\n";
   std::cerr << equals << std::endl;
-  std::cerr << "Global accuracy:    " << e.accuracy() << "\n";
-  //std::cerr << "Averaged precision: " << e.precision() << "\n";
+  std::cerr << "Global accuracy:          " << e.accuracy() << "\n";
+  std::cerr << "Macro-averaged precision: " << e.precision(true) << "\n";
   //std::cerr << "Averaged recall:    " << e.recall() << "\n";
   std::cerr << "\nPer label precision/recall/F1-score:";
   std::cerr << std::endl << dashes << std::endl;
