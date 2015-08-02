@@ -23,13 +23,21 @@ struct EvaluationInfo
     auto tp = true_positive_labels.find(label);
     if (tp == true_positive_labels.end()) return 0.0;
     auto fp = false_positive_labels.find(label);
-    if (fp == false_positive_labels.end()) return std::numeric_limits<float>::max();
-    return tp->second/float(tp->second+fp->second);
+    unsigned false_pos = (fp != false_positive_labels.end()) ? fp->second : 0;
+    return tp->second/float(tp->second+false_pos);
   }
 
+  /// Returns the overall (micro-averaged) precision
   float precision() const 
   {
-    return 0.0;
+    unsigned true_pos = 0, false_pos = 0;
+    for (auto tp = true_positive_labels.begin(); tp != true_positive_labels.end(); ++tp) {
+      true_pos += tp->second;
+    }
+    for (auto fp = false_positive_labels.begin(); fp != false_positive_labels.end(); ++fp) {
+      false_pos += fp->second;
+    }
+    return true_pos/float(true_pos+false_pos);
   }
 
   /// Returns the label-wise recall
@@ -38,13 +46,20 @@ struct EvaluationInfo
     auto tp = true_positive_labels.find(label);
     if (tp == true_positive_labels.end()) return 0.0;
     auto fn = false_negative_labels.find(label);
-    if (fn == false_negative_labels.end()) return std::numeric_limits<float>::max();
-    return tp->second/float(tp->second+fn->second);
+    unsigned false_neg = (fn != false_negative_labels.end()) ? fn->second : 0;
+    return tp->second/float(tp->second+false_neg);
   }
 
   float recall() const 
   {
-    return 0.0;
+    unsigned true_pos = 0, false_neg = 0;
+    for (auto tp = true_positive_labels.begin(); tp != true_positive_labels.end(); ++tp) {
+      true_pos += tp->second;
+    }
+    for (auto fn = false_negative_labels.begin(); fn != false_negative_labels.end(); ++fn) {
+      false_neg += fn->second;
+    }
+    return true_pos/float(true_pos+false_neg);
   }
 
   float f1_score() const

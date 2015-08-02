@@ -766,7 +766,8 @@ INPUT                  = ../include/SimpleLinearCRFModel.hpp \
 			 ../include/CRFTrainingCorpus.hpp \
 			 ../include/CRFFeatureExtractor.hpp \
 			 ../include/AveragedPerceptronCRFTrainer.hpp \
-			 ../include/NEROutputters.hpp \
+			 ../include/CRFOutputters.hpp \
+			 ../include/Evaluation.hpp \
 			 ../include/AsyncTokenizer.hpp \
 			 ../include/StringUnsignedMapper.hpp \
 			 ../src/crf-train.cpp \

@@ -18,6 +18,8 @@
 #include <sstream>
 #include <iterator>
 #include <algorithm>
+#include <iomanip>
+#include <limits>
 
 #include <tclap/CmdLine.h>
 
@@ -134,8 +136,8 @@ void load_and_apply_model(std::ifstream& model_in, const std::string& model_file
     outputter->epilog();
     time_t t = float(clock() - t0) * 1000 / CLOCKS_PER_SEC;
 
-    std::cerr << "  Processed " << crf_applier.processed_tokens() << " tokens in " 
-              << crf_applier.processed_sequences() << " sequences in " << t << "ms ";
+    std::cerr << "Processed " << crf_applier.processed_tokens() << " tokens in " 
+              << crf_applier.processed_sequences() << " sequences in " << (t/1000) << "s ";
     if (t > 0) 
       std::cerr << "(" << (1000* crf_applier.processed_tokens() / float(t)) << " tokens/s)\n";
     else 
@@ -152,16 +154,21 @@ void show_evaluation_results(const EvaluationInfo& e, const LabelSet& labels)
   std::cerr << std::endl << equals << std::endl;
   std::cerr << "Evaluation\n";
   std::cerr << equals << std::endl;
-  std::cerr << "Global accuracy:  " << (e.accuracy()*100) << "%\n";
+  std::cerr << "Global accuracy:    " << e.accuracy() << "\n";
+  //std::cerr << "Averaged precision: " << e.precision() << "\n";
+  //std::cerr << "Averaged recall:    " << e.recall() << "\n";
+  std::cerr << "\nPer label precision/recall/F1-score:";
   std::cerr << std::endl << dashes << std::endl;
-  std::cerr << "Label                    Prec      Rec       F1\n";
+  std::cerr << "Label                   Prec      Rec       F1\n";
   std::cerr << dashes << std::endl;
   for (auto l = labels.begin(); l != labels.end(); ++l) {
-    std::cerr << std::left << std::setw(20) << *l; 
-    std::cerr << std::right << std::setw(10) << std::setprecision(4) << (e.precision(*l)*100) << "%";
-    std::cerr << std::right << "    " << std::setprecision(4) << (e.recall(*l)*100) << "%";
-    std::cerr << std::endl;
-    //std::cerr << "  Recall:    " << (e.recall()*100) << "%\n";
+    float prec = e.precision(*l);
+    if (prec > 0.0) {
+      std::cerr << std::left << std::setw(20) << *l; 
+      std::cerr << std::right << std::setw(10) << std::setprecision(4) << (prec);
+      std::cerr << std::right << "    " << std::setprecision(4) << (e.recall(*l));
+      std::cerr << std::endl;
+    }
   }
   std::cerr << dashes << std::endl;
 }
