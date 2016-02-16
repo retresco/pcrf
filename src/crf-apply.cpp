@@ -104,8 +104,7 @@ void load_and_apply_model(std::ifstream& model_in, const std::string& model_file
   CRFApplier<ORDER> crf_applier(crf_model,crf_config);
 
   /// Construct the outputter object
-  NEROneWordPerLineOutputter one_word_per_line_outputter(std::cout,crf_config.get_default_label());
-  NERAnnotationOutputter ner_annotation_outputter(std::cout,crf_config.get_default_label());
+  OneTokenPerLineOutputter one_word_per_line_outputter(std::cout,crf_config.get_default_label());
   JSONOutputter json_outputter(std::cout,crf_config.get_default_label());
   MorphOutputter morph_outputter(std::cout);
   CRFOutputterBase* outputter = &one_word_per_line_outputter;

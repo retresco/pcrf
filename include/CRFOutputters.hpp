@@ -17,13 +17,14 @@ struct CRFOutputterBase
   /// Application mode
   virtual void operator()(const TokenWithTagSequence& sentence, bool last=false) {}
   virtual void operator()(const TokenWithTagSequence& sentence, const LabelSequence& inferred_labels, bool last=false) {}
+  virtual void reset() {}
 }; // CRFOutputterBase
 
 
 /// Output for one word plus annotation per line on a stream
-struct NEROneWordPerLineOutputter : public CRFOutputterBase
+struct OneTokenPerLineOutputter : public CRFOutputterBase
 {
-  NEROneWordPerLineOutputter(std::ostream& o, const std::string& dl) 
+  OneTokenPerLineOutputter(std::ostream& o, const std::string& dl) 
   : out(o), default_label(dl) {}
 
   void prolog() {}
@@ -48,7 +49,7 @@ struct NEROneWordPerLineOutputter : public CRFOutputterBase
 
   std::ostream& out;
   std::string default_label;
-}; // NEROneWordPerLineOutputter
+}; // CRFOneTokenPerLineOutputter
 
 
 /// Output results as structured JSON output on a string stream
@@ -128,10 +129,9 @@ struct JSONOutputter : public CRFOutputterBase
     }
   }
 
-  /// Evaluation mode
-  void operator()(const TokenWithTagSequence& sentence, const LabelSequence& inferred_labels)
+  void reset()
   {
-  // Not yet
+    entity_outputted = false;
   }
 
 private:
@@ -170,78 +170,6 @@ private:
   bool          pretty_print;      ///< Add indentation and newlines to the output
   bool          entity_outputted;  ///< Used for placing syntactically correct commas in the JSON output
 }; // JSONLineOutputter
-
-
-
-/// Add XML-style annotation to running text
-/// Note: this is a bit too much tailored towards NE recognition 
-struct NERAnnotationOutputter : public CRFOutputterBase
-{
-  NERAnnotationOutputter(std::ostream& o, const std::string& dl) 
-  : out(o), default_label(dl) {}
-
-  void prolog() {}
-  void epilog() {}
-
-  void operator()(const TokenWithTagSequence& sentence, bool last=false) const
-  {
-    bool in_ne = false;
-    for (unsigned i = 0; i < sentence.size(); ++i) {
-      const TokenWithTag& t = sentence[i];       
-      if (t.label == default_label) {
-
-        if (in_ne) {
-          out << "</ne>";
-          in_ne = false;
-        }
-
-        // Insert white space
-        if (i > 0) {
-          const TokenWithTag& prev_t = sentence[i-1];
-          if (t.token_class == "PUNCT" || t.token_class == "R_QUOTE" || 
-              t.token_class == "R_BRACKET" || t.token_class == "GENITIVE_SUFFIX") {
-          }
-          else {
-            if (!(prev_t.token_class == "L_QUOTE" || prev_t.token_class == "L_BRACKET")) {
-              out << " ";
-            }
-          }  
-        } // if (i > 0)
-        
-        out << t.token;
-      }
-      else {
-        // NE label
-        std::string ne_type = t.label.substr(0,t.label.size()-2);
-        std::string ne_type_suff = t.label.substr(t.label.size()-2);
-        
-        if (ne_type_suff == "_B") {
-          if (i > 0) out << " ";
-          out << "<ne class=\"" << ne_type << "\">" << t.token;
-          in_ne = true;
-        }
-        else if (ne_type_suff == "_I") {
-          out << " " << t.token;
-        }
-        else if (ne_type_suff == "_L") {
-          out << " " << t.token;
-        }
-        else if (ne_type_suff == "_U") {
-          if (i > 0) out << " ";
-          out << "<ne class=\"" << ne_type << "\">" << t.token << "</ne>";
-        }
-      }
-    }
-    out << "\n";
-  }
-
-  void operator()(const TokenWithTagSequence& sentence, const LabelSequence& inferred_labels, bool last=false) const 
-  {
-  }
-
-  std::ostream& out;
-  std::string default_label;
-}; // NERAnnotationOutputter
 
 
 /// Output for one word plus annotation per line on a stream

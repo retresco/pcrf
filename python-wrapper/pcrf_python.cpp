@@ -9,7 +9,7 @@
 #include <CRFConfiguration.hpp>
 #include <SimpleLinearCRFModel.hpp>
 #include <CRFApplier.hpp>
-#include <NEROutputters.hpp>
+#include <CRFOutputters.hpp>
 
 /// Encapsulates all the necessary parts for applying a CRF model to some input
 /// sequence within a single class
@@ -26,8 +26,8 @@ public:
   : crf_model(m), config(conf), crf_applier(m,conf), out_sstr(new std::stringstream)
   {
     // Dynamically create two different outputters
-    json_outputter = new JSONOutputter(*out_sstr,false);
-    tsv_outputter = new NEROneWordPerLineOutputter(*out_sstr);
+    json_outputter = new JSONOutputter(*out_sstr,config.get_default_label(), false);
+    tsv_outputter = new OneTokenPerLineOutputter(*out_sstr,config.get_default_label());
     // Set the default to tsv (tab-separated values)
     current_outputter = tsv_outputter;
   }
@@ -52,11 +52,11 @@ public:
     return out_sstr->str();
   }
 
-  // Apply to UTF-8 text file
+  /// Apply to UTF-8 text file
   std::string apply_to_text_file(std::string filename) 
   {
     std::ifstream in(filename.c_str());
-    if (!in) return "";
+    if (!in) { std::cerr << "Error"; return ""; };
 
     out_sstr->clear();
     current_outputter->prolog();
@@ -66,6 +66,23 @@ public:
     return out_sstr->str();
   }
   
+  /// Evaluate an UTF-8 (running) text file
+  /// Note: the output mode will be automatically set to 'tsv'
+  std::string evaluate_text_file(std::string filename) 
+  {
+    std::ifstream in(filename.c_str());
+    if (!in) return "";
+
+    set_output_mode("tsv");
+
+    out_sstr->clear();
+    current_outputter->prolog();
+    crf_applier.evaluation_of(in,*current_outputter,true);
+    current_outputter->epilog();
+
+    return out_sstr->str();
+  }
+
   /// Determines the output mode (either json or tsv)
   void set_output_mode(std::string mode)
   {
@@ -94,8 +111,8 @@ private: // Variables
   CRFApplier<ORDER>                   crf_applier;      ///< The actual applier
   std::shared_ptr<std::stringstream>  out_sstr;         ///< All the output goes here
   JSONOutputter*                      json_outputter;   ///< Outputter for JSON strings
-  NEROneWordPerLineOutputter*         tsv_outputter;
-  NEROutputterBase*                   current_outputter;
+  OneTokenPerLineOutputter*           tsv_outputter;
+  CRFOutputterBase*                   current_outputter;
 }; // LCRFApplier
 
 
@@ -116,9 +133,10 @@ BOOST_PYTHON_MODULE(pcrf_python)
 
   class_<FirstOrderLCRFApplier>("FirstOrderLCRFApplier",
                                 init<const SimpleLinearCRFFirstOrderModel&, const CRFConfiguration&>()).
-    def("apply_to",&FirstOrderLCRFApplier::apply_to).
-    def("apply_to_text_file",&FirstOrderLCRFApplier::apply_to_text_file).
-    def("set_output_mode",&FirstOrderLCRFApplier::set_output_mode).
-    def("reset",&FirstOrderLCRFApplier::reset)
+    def("apply_to", &FirstOrderLCRFApplier::apply_to).
+    def("apply_to_text_file", &FirstOrderLCRFApplier::apply_to_text_file).
+    def("evaluate_text_file", &FirstOrderLCRFApplier::evaluate_text_file).
+    def("set_output_mode", &FirstOrderLCRFApplier::set_output_mode).
+    def("reset", &FirstOrderLCRFApplier::reset)
   ;    
 }
